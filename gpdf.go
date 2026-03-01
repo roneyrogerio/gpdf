@@ -22,6 +22,8 @@
 package gpdf
 
 import (
+	gotemplate "text/template"
+
 	"github.com/gpdf-dev/gpdf/document"
 	"github.com/gpdf-dev/gpdf/template"
 )
@@ -73,3 +75,28 @@ var (
 	// BarcodeFormat sets the barcode symbology.
 	BarcodeFormat = template.BarcodeFormat
 )
+
+// Re-export JSON schema / Go template integration functions.
+var (
+	// FromJSON creates a Document from a JSON schema definition with
+	// optional Go template data binding.
+	FromJSON = template.FromJSON
+	// FromTemplate creates a Document by executing a pre-parsed Go
+	// template that produces JSON schema output.
+	FromTemplate = template.FromTemplate
+	// TemplateFuncMap returns helper functions (e.g., toJSON) for use
+	// when parsing Go templates for FromTemplate.
+	TemplateFuncMap = template.TemplateFuncMap
+)
+
+// NewDocumentFromJSON is an alias for FromJSON that creates a Document
+// from a JSON schema, optionally resolving Go template expressions with data.
+func NewDocumentFromJSON(schema []byte, data any, opts ...template.Option) (*template.Document, error) {
+	return template.FromJSON(schema, data, opts...)
+}
+
+// NewDocumentFromTemplate creates a Document by executing a Go template
+// that produces JSON schema output.
+func NewDocumentFromTemplate(tmpl *gotemplate.Template, data any, opts ...template.Option) (*template.Document, error) {
+	return template.FromTemplate(tmpl, data, opts...)
+}
