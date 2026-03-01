@@ -114,8 +114,8 @@ func (b *Barcode) PNG(barWidth, height int) ([]byte, error) {
 
 	// IHDR chunk.
 	writeChunk(&buf, "IHDR", func(d *bytes.Buffer) {
-		binary.Write(d, binary.BigEndian, uint32(width))  // width
-		binary.Write(d, binary.BigEndian, uint32(height)) // height
+		_ = binary.Write(d, binary.BigEndian, uint32(width))  // width
+		_ = binary.Write(d, binary.BigEndian, uint32(height)) // height
 		d.WriteByte(8)                                    // bit depth
 		d.WriteByte(2)                                    // color type: RGB
 		d.WriteByte(0)                                    // compression
@@ -131,7 +131,7 @@ func (b *Barcode) PNG(barWidth, height int) ([]byte, error) {
 		d.Write(compressed.Bytes())
 		// Adler-32 checksum of uncompressed data.
 		checksum := adler32(rawData)
-		binary.Write(d, binary.BigEndian, checksum)
+		_ = binary.Write(d, binary.BigEndian, checksum)
 	})
 
 	// IEND chunk.
