@@ -716,13 +716,15 @@ func resolvePDFFontName(family string, weight document.FontWeight, fontStyle doc
 	return family + suffix
 }
 
-// escapeStringPDF escapes special characters in a PDF literal string.
+// escapeStringPDF converts a UTF-8 Go string to a WinAnsiEncoding byte
+// sequence suitable for a PDF literal string, escaping special characters.
+// Characters outside the WinAnsiEncoding repertoire are replaced with '?'.
 func escapeStringPDF(s string) string {
 	var buf strings.Builder
 	buf.Grow(len(s))
-	for i := 0; i < len(s); i++ {
-		ch := s[i]
-		switch ch {
+	for _, r := range s {
+		b := runeToWinAnsi(r)
+		switch b {
 		case '(':
 			buf.WriteString(`\(`)
 		case ')':
@@ -734,8 +736,66 @@ func escapeStringPDF(s string) string {
 		case '\n':
 			buf.WriteString(`\n`)
 		default:
-			buf.WriteByte(ch)
+			buf.WriteByte(b)
 		}
 	}
 	return buf.String()
+}
+
+// runeToWinAnsi maps a Unicode rune to its WinAnsiEncoding byte value.
+// WinAnsiEncoding is the default encoding for Standard 14 (Type1) and
+// simple TrueType fonts in PDF. It matches ISO 8859-1 (Latin-1) for
+// 0x20–0x7E and 0xA0–0xFF, with additional characters in 0x80–0x9F.
+// Returns '?' for runes not representable in WinAnsiEncoding.
+func runeToWinAnsi(r rune) byte {
+	// ASCII printable + common controls.
+	if r >= 0x20 && r <= 0x7E {
+		return byte(r)
+	}
+	// Latin-1 Supplement (0xA0–0xFF): direct mapping.
+	if r >= 0xA0 && r <= 0xFF {
+		return byte(r)
+	}
+	// Control characters used by PDF.
+	switch r {
+	case '\n', '\r', '\t':
+		return byte(r)
+	}
+	// WinAnsiEncoding characters in the 0x80–0x9F range.
+	if b, ok := winAnsiSpecial[r]; ok {
+		return b
+	}
+	return '?'
+}
+
+// winAnsiSpecial maps Unicode code points to WinAnsiEncoding byte positions
+// for the 0x80–0x9F range, which differs from ISO 8859-1.
+var winAnsiSpecial = map[rune]byte{
+	'\u20AC': 0x80, // € Euro sign
+	'\u201A': 0x82, // ‚ Single low-9 quotation mark
+	'\u0192': 0x83, // ƒ Latin small letter f with hook
+	'\u201E': 0x84, // „ Double low-9 quotation mark
+	'\u2026': 0x85, // … Horizontal ellipsis
+	'\u2020': 0x86, // † Dagger
+	'\u2021': 0x87, // ‡ Double dagger
+	'\u02C6': 0x88, // ˆ Modifier letter circumflex accent
+	'\u2030': 0x89, // ‰ Per mille sign
+	'\u0160': 0x8A, // Š Latin capital letter S with caron
+	'\u2039': 0x8B, // ‹ Single left-pointing angle quotation mark
+	'\u0152': 0x8C, // Œ Latin capital ligature OE
+	'\u017D': 0x8E, // Ž Latin capital letter Z with caron
+	'\u2018': 0x91, // ' Left single quotation mark
+	'\u2019': 0x92, // ' Right single quotation mark
+	'\u201C': 0x93, // " Left double quotation mark
+	'\u201D': 0x94, // " Right double quotation mark
+	'\u2022': 0x95, // • Bullet
+	'\u2013': 0x96, // – En dash
+	'\u2014': 0x97, // — Em dash
+	'\u02DC': 0x98, // ˜ Small tilde
+	'\u2122': 0x99, // ™ Trade mark sign
+	'\u0161': 0x9A, // š Latin small letter s with caron
+	'\u203A': 0x9B, // › Single right-pointing angle quotation mark
+	'\u0153': 0x9C, // œ Latin small ligature oe
+	'\u017E': 0x9E, // ž Latin small letter z with caron
+	'\u0178': 0x9F, // Ÿ Latin capital letter Y with diaeresis
 }
