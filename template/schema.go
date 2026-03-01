@@ -1,0 +1,598 @@
+package template
+
+import (
+	"encoding/base64"
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/gpdf-dev/gpdf/barcode"
+	"github.com/gpdf-dev/gpdf/document"
+	"github.com/gpdf-dev/gpdf/pdf"
+)
+
+// ---------------------------------------------------------------------------
+// JSON Schema types
+// ---------------------------------------------------------------------------
+
+// Schema represents the top-level JSON structure for declarative PDF
+// document definition. It maps directly to the builder API, allowing
+// documents to be defined as JSON instead of Go code.
+//
+// Example JSON:
+//
+//	{
+//	  "page": { "size": "A4", "margins": "15mm" },
+//	  "body": [
+//	    { "row": { "cols": [
+//	      { "span": 12, "text": "Hello", "style": { "size": 24, "bold": true } }
+//	    ]}}
+//	  ]
+//	}
+type Schema struct {
+	Page     SchemaPage  `json:"page"`
+	Metadata *SchemaMeta `json:"metadata,omitempty"`
+	Header   []SchemaRow `json:"header,omitempty"`
+	Footer   []SchemaRow `json:"footer,omitempty"`
+	Body     []SchemaRow `json:"body"`
+}
+
+// SchemaPage defines page-level settings.
+type SchemaPage struct {
+	Size    string `json:"size"`              // "A4", "A3", "Letter", "Legal"
+	Margins string `json:"margins,omitempty"` // e.g., "15mm", "20pt"
+}
+
+// SchemaMeta defines document metadata.
+type SchemaMeta struct {
+	Title   string `json:"title,omitempty"`
+	Author  string `json:"author,omitempty"`
+	Subject string `json:"subject,omitempty"`
+	Creator string `json:"creator,omitempty"`
+}
+
+// SchemaRow wraps a single row definition.
+type SchemaRow struct {
+	Row SchemaRowDef `json:"row"`
+}
+
+// SchemaRowDef defines the height and columns of a row.
+type SchemaRowDef struct {
+	Height string      `json:"height,omitempty"` // "auto" or dimension e.g. "12mm"
+	Cols   []SchemaCol `json:"cols"`
+}
+
+// SchemaCol defines a grid column with its span and content.
+// Content can be specified as direct shorthand fields (text, image, etc.)
+// or via the Elements array for multiple elements in one column.
+type SchemaCol struct {
+	Span int `json:"span"`
+
+	// Shorthand: single element per column.
+	Text    string         `json:"text,omitempty"`
+	Image   *SchemaImage   `json:"image,omitempty"`
+	Table   *SchemaTable   `json:"table,omitempty"`
+	List    *SchemaList    `json:"list,omitempty"`
+	Line    *SchemaLine    `json:"line,omitempty"`
+	Spacer  string         `json:"spacer,omitempty"` // dimension string
+	QRCode  *SchemaQRCode  `json:"qrcode,omitempty"`
+	Barcode *SchemaBarcode `json:"barcode,omitempty"`
+	Style   *SchemaStyle   `json:"style,omitempty"` // applies to text shorthand
+
+	// Multiple elements in one column.
+	Elements []SchemaElement `json:"elements,omitempty"`
+}
+
+// SchemaElement defines a single content element within a column.
+type SchemaElement struct {
+	// Type selects the element kind: "text", "image", "table", "list",
+	// "line", "spacer", "qrcode", "barcode", "pageNumber", "totalPages".
+	Type    string       `json:"type"`
+	Content string       `json:"content,omitempty"` // for text
+	Style   *SchemaStyle `json:"style,omitempty"`
+
+	Image   *SchemaImage   `json:"image,omitempty"`
+	Table   *SchemaTable   `json:"table,omitempty"`
+	List    *SchemaList    `json:"list,omitempty"`
+	Line    *SchemaLine    `json:"line,omitempty"`
+	Height  string         `json:"height,omitempty"` // for spacer
+	QRCode  *SchemaQRCode  `json:"qrcode,omitempty"`
+	Barcode *SchemaBarcode `json:"barcode,omitempty"`
+}
+
+// SchemaStyle defines text styling properties.
+type SchemaStyle struct {
+	Size          float64 `json:"size,omitempty"`
+	Bold          bool    `json:"bold,omitempty"`
+	Italic        bool    `json:"italic,omitempty"`
+	Align         string  `json:"align,omitempty"`      // "left", "center", "right"
+	Color         string  `json:"color,omitempty"`      // "#RRGGBB" or named
+	Background    string  `json:"background,omitempty"` // "#RRGGBB" or named
+	FontFamily    string  `json:"fontFamily,omitempty"`
+	Underline     bool    `json:"underline,omitempty"`
+	Strikethrough bool    `json:"strikethrough,omitempty"`
+	LetterSpacing float64 `json:"letterSpacing,omitempty"`
+}
+
+// SchemaImage defines an image element.
+type SchemaImage struct {
+	Src    string `json:"src"`              // base64 or data URI
+	Width  string `json:"width,omitempty"`  // dimension
+	Height string `json:"height,omitempty"` // dimension
+}
+
+// SchemaTable defines a table element.
+type SchemaTable struct {
+	Header       []string     `json:"header"`
+	Rows         [][]string   `json:"rows"`
+	ColumnWidths []float64    `json:"columnWidths,omitempty"`
+	HeaderStyle  *SchemaStyle `json:"headerStyle,omitempty"`
+	StripeColor  string       `json:"stripeColor,omitempty"`
+}
+
+// SchemaList defines a list element.
+type SchemaList struct {
+	Type  string   `json:"type,omitempty"` // "ordered" or "unordered" (default)
+	Items []string `json:"items"`
+}
+
+// SchemaLine defines a horizontal line element.
+type SchemaLine struct {
+	Color     string `json:"color,omitempty"`
+	Thickness string `json:"thickness,omitempty"`
+}
+
+// SchemaQRCode defines a QR code element.
+type SchemaQRCode struct {
+	Data string `json:"data"`
+	Size string `json:"size,omitempty"`
+}
+
+// SchemaBarcode defines a barcode element.
+type SchemaBarcode struct {
+	Data   string `json:"data"`
+	Width  string `json:"width,omitempty"`
+	Height string `json:"height,omitempty"`
+	Format string `json:"format,omitempty"` // "code128" (default)
+}
+
+// ---------------------------------------------------------------------------
+// Parsing utilities
+// ---------------------------------------------------------------------------
+
+// parseValue parses a dimension string like "15mm", "12pt", "auto" into
+// a document.Value. A bare number defaults to points.
+func parseValue(s string) (document.Value, error) {
+	s = strings.TrimSpace(s)
+	if s == "" || s == "auto" {
+		return document.Auto, nil
+	}
+
+	type unitSuffix struct {
+		suffix string
+		unit   document.Unit
+	}
+	// Longer suffixes first to avoid "m" matching before "mm".
+	suffixes := []unitSuffix{
+		{"mm", document.UnitMm},
+		{"cm", document.UnitCm},
+		{"in", document.UnitIn},
+		{"pt", document.UnitPt},
+		{"em", document.UnitEm},
+		{"%", document.UnitPct},
+	}
+
+	for _, u := range suffixes {
+		if strings.HasSuffix(s, u.suffix) {
+			numStr := strings.TrimSpace(strings.TrimSuffix(s, u.suffix))
+			v, err := strconv.ParseFloat(numStr, 64)
+			if err != nil {
+				return document.Value{}, fmt.Errorf("invalid value %q: %w", s, err)
+			}
+			return document.Value{Amount: v, Unit: u.unit}, nil
+		}
+	}
+
+	// Plain number defaults to pt.
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return document.Value{}, fmt.Errorf("invalid value %q", s)
+	}
+	return document.Pt(v), nil
+}
+
+// parsePageSize converts a page size name to document.Size.
+func parsePageSize(s string) (document.Size, error) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "a4":
+		return document.A4, nil
+	case "a3":
+		return document.A3, nil
+	case "letter":
+		return document.Letter, nil
+	case "legal":
+		return document.Legal, nil
+	default:
+		return document.Size{}, fmt.Errorf("unknown page size: %q", s)
+	}
+}
+
+// parseColor parses a color string into pdf.Color.
+// Supported formats: "#RRGGBB" hex, or named colors (black, white, red,
+// green, blue, yellow, cyan, magenta).
+func parseColor(s string) (pdf.Color, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return pdf.Black, nil
+	}
+
+	switch strings.ToLower(s) {
+	case "black":
+		return pdf.Black, nil
+	case "white":
+		return pdf.White, nil
+	case "red":
+		return pdf.Red, nil
+	case "green":
+		return pdf.Green, nil
+	case "blue":
+		return pdf.Blue, nil
+	case "yellow":
+		return pdf.Yellow, nil
+	case "cyan":
+		return pdf.Cyan, nil
+	case "magenta":
+		return pdf.Magenta, nil
+	}
+
+	// Hex color: #RRGGBB.
+	if strings.HasPrefix(s, "#") && len(s) == 7 {
+		hex, err := strconv.ParseUint(s[1:], 16, 32)
+		if err != nil {
+			return pdf.Color{}, fmt.Errorf("invalid color %q: %w", s, err)
+		}
+		return pdf.RGBHex(uint32(hex)), nil
+	}
+
+	return pdf.Color{}, fmt.Errorf("unknown color: %q", s)
+}
+
+// parseAlignOption converts an alignment string to a TextOption.
+func parseAlignOption(align string) TextOption {
+	switch strings.ToLower(align) {
+	case "center":
+		return AlignCenter()
+	case "right":
+		return AlignRight()
+	default:
+		return AlignLeft()
+	}
+}
+
+// applySchemaStyle converts a SchemaStyle to a slice of TextOption.
+func applySchemaStyle(ss *SchemaStyle) []TextOption {
+	if ss == nil {
+		return nil
+	}
+	var opts []TextOption
+	if ss.Size > 0 {
+		opts = append(opts, FontSize(ss.Size))
+	}
+	if ss.Bold {
+		opts = append(opts, Bold())
+	}
+	if ss.Italic {
+		opts = append(opts, Italic())
+	}
+	if ss.Align != "" {
+		opts = append(opts, parseAlignOption(ss.Align))
+	}
+	if ss.Color != "" {
+		if c, err := parseColor(ss.Color); err == nil {
+			opts = append(opts, TextColor(c))
+		}
+	}
+	if ss.Background != "" {
+		if c, err := parseColor(ss.Background); err == nil {
+			opts = append(opts, BgColor(c))
+		}
+	}
+	if ss.FontFamily != "" {
+		opts = append(opts, FontFamily(ss.FontFamily))
+	}
+	if ss.Underline {
+		opts = append(opts, Underline())
+	}
+	if ss.Strikethrough {
+		opts = append(opts, Strikethrough())
+	}
+	if ss.LetterSpacing != 0 {
+		opts = append(opts, LetterSpacing(ss.LetterSpacing))
+	}
+	return opts
+}
+
+// decodeBase64Image decodes a base64-encoded image string.
+// Supports both raw base64 and data URI format (data:image/...;base64,...).
+func decodeBase64Image(s string) ([]byte, error) {
+	if strings.HasPrefix(s, "data:") {
+		idx := strings.Index(s, ",")
+		if idx < 0 {
+			return nil, fmt.Errorf("invalid data URI")
+		}
+		s = s[idx+1:]
+	}
+	return base64.StdEncoding.DecodeString(s)
+}
+
+// ---------------------------------------------------------------------------
+// Schema → Document builder
+// ---------------------------------------------------------------------------
+
+// buildFromSchema constructs a Document from a parsed Schema.
+func buildFromSchema(schema *Schema, opts []Option) (*Document, error) {
+	var docOpts []Option
+
+	if schema.Page.Size != "" {
+		size, err := parsePageSize(schema.Page.Size)
+		if err != nil {
+			return nil, err
+		}
+		docOpts = append(docOpts, WithPageSize(size))
+	}
+
+	if schema.Page.Margins != "" {
+		v, err := parseValue(schema.Page.Margins)
+		if err != nil {
+			return nil, fmt.Errorf("invalid margins: %w", err)
+		}
+		docOpts = append(docOpts, WithMargins(document.UniformEdges(v)))
+	}
+
+	if schema.Metadata != nil {
+		docOpts = append(docOpts, WithMetadata(document.DocumentMetadata{
+			Title:   schema.Metadata.Title,
+			Author:  schema.Metadata.Author,
+			Subject: schema.Metadata.Subject,
+			Creator: schema.Metadata.Creator,
+		}))
+	}
+
+	// User-provided options override schema-level settings.
+	docOpts = append(docOpts, opts...)
+
+	doc := New(docOpts...)
+
+	if len(schema.Header) > 0 {
+		rows := schema.Header // capture for closure
+		doc.Header(func(p *PageBuilder) {
+			buildSchemaRows(p, rows)
+		})
+	}
+
+	if len(schema.Footer) > 0 {
+		rows := schema.Footer // capture for closure
+		doc.Footer(func(p *PageBuilder) {
+			buildSchemaRows(p, rows)
+		})
+	}
+
+	if len(schema.Body) > 0 {
+		page := doc.AddPage()
+		buildSchemaRows(page, schema.Body)
+	}
+
+	return doc, nil
+}
+
+// buildSchemaRows adds rows from the schema to a PageBuilder.
+func buildSchemaRows(p *PageBuilder, rows []SchemaRow) {
+	for _, sr := range rows {
+		cols := sr.Row.Cols
+		height := sr.Row.Height
+
+		if height == "" || height == "auto" {
+			p.AutoRow(func(r *RowBuilder) {
+				buildSchemaCols(r, cols)
+			})
+		} else {
+			v, err := parseValue(height)
+			if err != nil {
+				continue // skip rows with invalid height
+			}
+			p.Row(v, func(r *RowBuilder) {
+				buildSchemaCols(r, cols)
+			})
+		}
+	}
+}
+
+// buildSchemaCols adds columns from the schema to a RowBuilder.
+func buildSchemaCols(r *RowBuilder, cols []SchemaCol) {
+	for _, sc := range cols {
+		col := sc // capture for closure
+		r.Col(col.Span, func(c *ColBuilder) {
+			buildSchemaColContent(c, col)
+		})
+	}
+}
+
+// buildSchemaColContent adds content to a column from its schema definition.
+func buildSchemaColContent(c *ColBuilder, col SchemaCol) {
+	// If elements array is provided, use it.
+	if len(col.Elements) > 0 {
+		for _, elem := range col.Elements {
+			buildSchemaElement(c, elem)
+		}
+		return
+	}
+
+	// Shorthand: direct properties on the column.
+	if col.Text != "" {
+		opts := applySchemaStyle(col.Style)
+		c.Text(col.Text, opts...)
+	}
+	if col.Image != nil {
+		buildSchemaImage(c, col.Image)
+	}
+	if col.Table != nil {
+		buildSchemaTable(c, col.Table)
+	}
+	if col.List != nil {
+		buildSchemaList(c, col.List)
+	}
+	if col.Line != nil {
+		buildSchemaLine(c, col.Line)
+	}
+	if col.Spacer != "" {
+		if v, err := parseValue(col.Spacer); err == nil {
+			c.Spacer(v)
+		}
+	}
+	if col.QRCode != nil {
+		buildSchemaQRCode(c, col.QRCode)
+	}
+	if col.Barcode != nil {
+		buildSchemaBarcode(c, col.Barcode)
+	}
+}
+
+// buildSchemaElement adds a single element to a ColBuilder.
+func buildSchemaElement(c *ColBuilder, elem SchemaElement) {
+	switch strings.ToLower(elem.Type) {
+	case "text":
+		opts := applySchemaStyle(elem.Style)
+		c.Text(elem.Content, opts...)
+	case "image":
+		buildSchemaImage(c, elem.Image)
+	case "table":
+		buildSchemaTable(c, elem.Table)
+	case "list":
+		buildSchemaList(c, elem.List)
+	case "line":
+		buildSchemaLine(c, elem.Line)
+	case "spacer":
+		if v, err := parseValue(elem.Height); err == nil {
+			c.Spacer(v)
+		}
+	case "qrcode":
+		buildSchemaQRCode(c, elem.QRCode)
+	case "barcode":
+		buildSchemaBarcode(c, elem.Barcode)
+	case "pagenumber":
+		opts := applySchemaStyle(elem.Style)
+		c.PageNumber(opts...)
+	case "totalpages":
+		opts := applySchemaStyle(elem.Style)
+		c.TotalPages(opts...)
+	}
+}
+
+func buildSchemaImage(c *ColBuilder, img *SchemaImage) {
+	if img == nil {
+		return
+	}
+	data, err := decodeBase64Image(img.Src)
+	if err != nil {
+		return // silently skip, consistent with builder API pattern
+	}
+	var opts []ImageOption
+	if img.Width != "" {
+		if v, err := parseValue(img.Width); err == nil {
+			opts = append(opts, FitWidth(v))
+		}
+	}
+	if img.Height != "" {
+		if v, err := parseValue(img.Height); err == nil {
+			opts = append(opts, FitHeight(v))
+		}
+	}
+	c.Image(data, opts...)
+}
+
+func buildSchemaTable(c *ColBuilder, tbl *SchemaTable) {
+	if tbl == nil {
+		return
+	}
+	var opts []TableOption
+	if len(tbl.ColumnWidths) > 0 {
+		opts = append(opts, ColumnWidths(tbl.ColumnWidths...))
+	}
+	if tbl.HeaderStyle != nil {
+		textOpts := applySchemaStyle(tbl.HeaderStyle)
+		opts = append(opts, TableHeaderStyle(textOpts...))
+	}
+	if tbl.StripeColor != "" {
+		if clr, err := parseColor(tbl.StripeColor); err == nil {
+			opts = append(opts, TableStripe(clr))
+		}
+	}
+	c.Table(tbl.Header, tbl.Rows, opts...)
+}
+
+func buildSchemaList(c *ColBuilder, lst *SchemaList) {
+	if lst == nil {
+		return
+	}
+	if strings.ToLower(lst.Type) == "ordered" {
+		c.OrderedList(lst.Items)
+	} else {
+		c.List(lst.Items)
+	}
+}
+
+func buildSchemaLine(c *ColBuilder, ln *SchemaLine) {
+	if ln == nil {
+		c.Line()
+		return
+	}
+	var opts []LineOption
+	if ln.Color != "" {
+		if clr, err := parseColor(ln.Color); err == nil {
+			opts = append(opts, LineColor(clr))
+		}
+	}
+	if ln.Thickness != "" {
+		if v, err := parseValue(ln.Thickness); err == nil {
+			opts = append(opts, LineThickness(v))
+		}
+	}
+	c.Line(opts...)
+}
+
+func buildSchemaQRCode(c *ColBuilder, qr *SchemaQRCode) {
+	if qr == nil {
+		return
+	}
+	var opts []QRCodeOption
+	if qr.Size != "" {
+		if v, err := parseValue(qr.Size); err == nil {
+			opts = append(opts, QRSize(v))
+		}
+	}
+	c.QRCode(qr.Data, opts...)
+}
+
+func buildSchemaBarcode(c *ColBuilder, bc *SchemaBarcode) {
+	if bc == nil {
+		return
+	}
+	var opts []BarcodeOption
+	if bc.Width != "" {
+		if v, err := parseValue(bc.Width); err == nil {
+			opts = append(opts, BarcodeWidth(v))
+		}
+	}
+	if bc.Height != "" {
+		if v, err := parseValue(bc.Height); err == nil {
+			opts = append(opts, BarcodeHeight(v))
+		}
+	}
+	if bc.Format != "" {
+		switch strings.ToLower(bc.Format) {
+		case "code128":
+			opts = append(opts, BarcodeFormat(barcode.Code128))
+		}
+	}
+	c.Barcode(bc.Data, opts...)
+}

@@ -16,8 +16,15 @@
 - **12カラムグリッドシステム** — Bootstrap風のレスポンシブレイアウト
 - **TrueTypeフォント対応** — カスタムフォントの埋め込みとサブセット化
 - **CJK対応** — 日中韓テキストを初日からフルサポート
-- **テーブル** — ヘッダー、カラム幅指定、ストライプ行
-- **ヘッダー＆フッター** — 全ページで一貫した表示
+- **テーブル** — ヘッダー、カラム幅指定、ストライプ行、垂直揃え
+- **ヘッダー＆フッター** — ページ番号付きで全ページに一貫表示
+- **リスト** — 箇条書きリストと番号付きリスト
+- **QRコード** — 純GoのQRコード生成（誤り訂正レベル対応）
+- **バーコード** — Code 128バーコード生成
+- **テキスト装飾** — 下線、取り消し線、字間、字下げ
+- **ページ番号** — 自動ページ番号と総ページ数
+- **Goテンプレート統合** — GoテンプレートからPDF生成
+- **JSONスキーマ** — JSONのみでドキュメントを定義
 - **複数の単位** — pt, mm, cm, in, em, %
 - **カラースペース** — RGB、グレースケール、CMYK
 - **画像** — JPEGとPNGの埋め込み（フィットオプション対応）
@@ -189,6 +196,80 @@ c.Line(template.LineThickness(document.Pt(3)))      // 太線
 c.Spacer(document.Mm(5))                            // 5mmの垂直間隔
 ```
 
+### リスト
+
+箇条書きリストと番号付きリスト:
+
+```go
+// 箇条書きリスト
+c.List([]string{"項目1", "項目2", "項目3"})
+
+// 番号付きリスト
+c.OrderedList([]string{"ステップ1", "ステップ2", "ステップ3"})
+```
+
+### QRコード
+
+サイズと誤り訂正レベルを指定可能なQRコード生成:
+
+```go
+// 基本的なQRコード
+c.QRCode("https://gpdf.dev")
+
+// サイズと誤り訂正レベルを指定
+c.QRCode("https://gpdf.dev",
+	template.QRSize(document.Mm(30)),
+	template.QRErrorCorrection(qrcode.LevelH))
+```
+
+### バーコード
+
+Code 128バーコード生成:
+
+```go
+// 基本的なバーコード
+c.Barcode("INV-2026-0001")
+
+// 幅を指定
+c.Barcode("INV-2026-0001", template.BarcodeWidth(document.Mm(80)))
+```
+
+### ページ番号
+
+自動ページ番号と総ページ数:
+
+```go
+doc.Footer(func(p *template.PageBuilder) {
+	p.AutoRow(func(r *template.RowBuilder) {
+		r.Col(6, func(c *template.ColBuilder) {
+			c.Text("gpdfで生成", template.FontSize(8))
+		})
+		r.Col(6, func(c *template.ColBuilder) {
+			c.PageNumber(template.AlignRight(), template.FontSize(8))
+		})
+	})
+})
+
+doc.Header(func(p *template.PageBuilder) {
+	p.AutoRow(func(r *template.RowBuilder) {
+		r.Col(12, func(c *template.ColBuilder) {
+			c.TotalPages(template.AlignRight(), template.FontSize(9))
+		})
+	})
+})
+```
+
+### テキスト装飾
+
+下線、取り消し線、字間、字下げ:
+
+```go
+c.Text("下線テキスト", template.Underline())
+c.Text("取り消し線テキスト", template.Strikethrough())
+c.Text("広い字間", template.LetterSpacing(3))
+c.Text("字下げ段落...", template.TextIndent(document.Pt(24)))
+```
+
 ### ヘッダー＆フッター
 
 全ページに繰り返し表示されるヘッダーとフッター:
@@ -214,6 +295,51 @@ doc.Footer(func(p *template.PageBuilder) {
 		})
 	})
 })
+```
+
+### JSONスキーマ
+
+JSONのみでドキュメントを定義:
+
+```go
+schema := []byte(`{
+	"page": {"size": "A4", "margins": "20mm"},
+	"metadata": {"title": "レポート", "author": "gpdf"},
+	"body": [
+		{"row": {"cols": [
+			{"span": 12, "text": "JSONからこんにちは", "style": {"size": 24, "bold": true}}
+		]}}
+	]
+}`)
+
+doc, err := template.FromJSON(schema, nil)
+data, _ := doc.Generate()
+```
+
+### Goテンプレート統合
+
+GoテンプレートとJSONスキーマで動的コンテンツを生成:
+
+```go
+schema := []byte(`{
+	"page": {"size": "A4", "margins": "20mm"},
+	"metadata": {"title": "{{.Title}}"},
+	"body": [
+		{"row": {"cols": [
+			{"span": 12, "text": "{{.Title}}", "style": {"size": 24, "bold": true}}
+		]}}
+	]
+}`)
+
+data := map[string]any{"Title": "動的レポート"}
+doc, err := template.FromJSON(schema, data)
+```
+
+事前パース済みGoテンプレートでより柔軟に:
+
+```go
+tmpl, _ := gotemplate.New("doc").Funcs(template.TemplateFuncMap()).Parse(schemaStr)
+doc, err := template.FromTemplate(tmpl, data)
 ```
 
 ### ドキュメントメタデータ
@@ -286,6 +412,12 @@ doc.Render(f)
 | `c.Text(text, opts...)` | スタイルオプション付きテキストを追加 |
 | `c.Table(header, rows, opts...)` | テーブルを追加 |
 | `c.Image(data, opts...)` | 画像を追加 (JPEG/PNG) |
+| `c.QRCode(data, opts...)` | QRコードを追加 |
+| `c.Barcode(data, opts...)` | バーコードを追加 (Code 128) |
+| `c.List(items, opts...)` | 箇条書きリストを追加 |
+| `c.OrderedList(items, opts...)` | 番号付きリストを追加 |
+| `c.PageNumber(opts...)` | 現在のページ番号を追加 |
+| `c.TotalPages(opts...)` | 総ページ数を追加 |
 | `c.Line(opts...)` | 水平線を追加 |
 | `c.Spacer(height)` | 垂直スペースを追加 |
 
@@ -299,6 +431,10 @@ doc.Render(f)
 | `template.FontFamily(name)` | 登録済みフォントを使用 |
 | `template.TextColor(color)` | テキスト色を設定 |
 | `template.BgColor(color)` | 背景色を設定 |
+| `template.Underline()` | 下線装飾 |
+| `template.Strikethrough()` | 取り消し線装飾 |
+| `template.LetterSpacing(pts)` | 字間をポイント単位で設定 |
+| `template.TextIndent(value)` | 字下げを設定 |
 | `template.AlignLeft()` | 左揃え（デフォルト） |
 | `template.AlignCenter()` | 中央揃え |
 | `template.AlignRight()` | 右揃え |
@@ -310,6 +446,7 @@ doc.Render(f)
 | `template.ColumnWidths(w...)` | カラム幅をパーセンテージで設定 |
 | `template.TableHeaderStyle(opts...)` | ヘッダー行のスタイル設定 |
 | `template.TableStripe(color)` | 交互行の色を設定 |
+| `template.TableCellVAlign(align)` | セルの垂直揃え (Top/Middle/Bottom) |
 
 ### 画像オプション
 
@@ -317,6 +454,30 @@ doc.Render(f)
 |---|---|
 | `template.FitWidth(value)` | 幅に合わせてスケール（アスペクト比維持） |
 | `template.FitHeight(value)` | 高さに合わせてスケール（アスペクト比維持） |
+
+### QRコードオプション
+
+| オプション | 説明 |
+|---|---|
+| `template.QRSize(value)` | QRコードのサイズを設定 |
+| `template.QRErrorCorrection(level)` | 誤り訂正レベルを設定 (L/M/Q/H) |
+| `template.QRScale(n)` | モジュールスケール係数を設定 |
+
+### バーコードオプション
+
+| オプション | 説明 |
+|---|---|
+| `template.BarcodeWidth(value)` | バーコードの幅を設定 |
+| `template.BarcodeHeight(value)` | バーコードの高さを設定 |
+| `template.BarcodeFormat(fmt)` | バーコードフォーマットを設定 (Code 128) |
+
+### テンプレート生成
+
+| 関数 | 説明 |
+|---|---|
+| `template.FromJSON(schema, data)` | JSONスキーマからドキュメントを生成 |
+| `template.FromTemplate(tmpl, data)` | Goテンプレートからドキュメントを生成 |
+| `template.TemplateFuncMap()` | テンプレートヘルパー関数を取得（`toJSON`を含む） |
 
 ### 罫線オプション
 

@@ -16,8 +16,15 @@
 - **12 列网格系统** — Bootstrap 风格的响应式布局
 - **TrueType 字体支持** — 自定义字体嵌入与子集化
 - **CJK 就绪** — 从第一天起完整支持中日韩文本
-- **表格** — 表头、列宽、条纹行
-- **页眉和页脚** — 所有页面统一显示
+- **表格** — 表头、列宽、条纹行、垂直对齐
+- **页眉和页脚** — 带页码，所有页面统一显示
+- **列表** — 无序列表和有序列表
+- **二维码** — 纯 Go 二维码生成（支持纠错等级）
+- **条形码** — Code 128 条形码生成
+- **文本装饰** — 下划线、删除线、字间距、首行缩进
+- **页码** — 自动页码和总页数
+- **Go 模板集成** — 从 Go 模板生成 PDF
+- **JSON 模式** — 完全用 JSON 定义文档
 - **多种单位** — pt、mm、cm、in、em、%
 - **色彩空间** — RGB、灰度、CMYK
 - **图片** — JPEG 和 PNG 嵌入（支持缩放选项）
@@ -286,6 +293,12 @@ doc.Render(f)
 | `c.Text(text, opts...)` | 添加带样式选项的文本 |
 | `c.Table(header, rows, opts...)` | 添加表格 |
 | `c.Image(data, opts...)` | 添加图片（JPEG/PNG） |
+| `c.QRCode(data, opts...)` | 添加二维码 |
+| `c.Barcode(data, opts...)` | 添加条形码（Code 128） |
+| `c.List(items, opts...)` | 添加无序列表 |
+| `c.OrderedList(items, opts...)` | 添加有序列表 |
+| `c.PageNumber(opts...)` | 添加当前页码 |
+| `c.TotalPages(opts...)` | 添加总页数 |
 | `c.Line(opts...)` | 添加水平线 |
 | `c.Spacer(height)` | 添加垂直间距 |
 
@@ -299,6 +312,10 @@ doc.Render(f)
 | `template.FontFamily(name)` | 使用已注册的字体 |
 | `template.TextColor(color)` | 设置文本颜色 |
 | `template.BgColor(color)` | 设置背景颜色 |
+| `template.Underline()` | 下划线装饰 |
+| `template.Strikethrough()` | 删除线装饰 |
+| `template.LetterSpacing(pts)` | 设置字间距（磅） |
+| `template.TextIndent(value)` | 设置首行缩进 |
 | `template.AlignLeft()` | 左对齐（默认） |
 | `template.AlignCenter()` | 居中对齐 |
 | `template.AlignRight()` | 右对齐 |
@@ -310,6 +327,7 @@ doc.Render(f)
 | `template.ColumnWidths(w...)` | 设置列宽百分比 |
 | `template.TableHeaderStyle(opts...)` | 设置表头行样式 |
 | `template.TableStripe(color)` | 设置交替行颜色 |
+| `template.TableCellVAlign(align)` | 设置单元格垂直对齐（Top/Middle/Bottom） |
 
 ### 图片选项
 
@@ -317,6 +335,30 @@ doc.Render(f)
 |---|---|
 | `template.FitWidth(value)` | 按宽度缩放（保持宽高比） |
 | `template.FitHeight(value)` | 按高度缩放（保持宽高比） |
+
+### 二维码选项
+
+| 选项 | 说明 |
+|---|---|
+| `template.QRSize(value)` | 设置二维码大小 |
+| `template.QRErrorCorrection(level)` | 设置纠错等级（L/M/Q/H） |
+| `template.QRScale(n)` | 设置模块缩放因子 |
+
+### 条形码选项
+
+| 选项 | 说明 |
+|---|---|
+| `template.BarcodeWidth(value)` | 设置条形码宽度 |
+| `template.BarcodeHeight(value)` | 设置条形码高度 |
+| `template.BarcodeFormat(fmt)` | 设置条形码格式（Code 128） |
+
+### 模板生成
+
+| 函数 | 说明 |
+|---|---|
+| `template.FromJSON(schema, data)` | 从 JSON 模式生成文档 |
+| `template.FromTemplate(tmpl, data)` | 从 Go 模板生成文档 |
+| `template.TemplateFuncMap()` | 获取模板辅助函数（包含 `toJSON`） |
 
 ### 线条选项
 

@@ -16,8 +16,15 @@ Biblioteca de geração de PDF em Go puro, sem dependências externas, com arqui
 - **Sistema de grade de 12 colunas** — layout responsivo estilo Bootstrap
 - **Suporte a fontes TrueType** — incorporação de fontes personalizadas com subconjuntos
 - **Pronto para CJK** — suporte completo a texto chinês, japonês e coreano desde o primeiro dia
-- **Tabelas** — cabeçalhos, larguras de coluna, linhas alternadas
-- **Cabeçalhos e rodapés** — consistentes em todas as páginas
+- **Tabelas** — cabeçalhos, larguras de coluna, linhas alternadas, alinhamento vertical
+- **Cabeçalhos e rodapés** — com números de página, consistentes em todas as páginas
+- **Listas** — listas com marcadores e numeradas
+- **QR codes** — geração de QR code em Go puro (níveis de correção de erros)
+- **Códigos de barras** — geração de Code 128
+- **Decorações de texto** — sublinhado, tachado, espaçamento de letras, recuo
+- **Números de página** — número de página automático e total de páginas
+- **Integração com Go templates** — gerar PDFs a partir de templates Go
+- **Esquema JSON** — definir documentos inteiramente em JSON
 - **Múltiplas unidades** — pt, mm, cm, in, em, %
 - **Espaços de cor** — RGB, escala de cinza, CMYK
 - **Imagens** — incorporação de JPEG e PNG com opções de ajuste
@@ -286,6 +293,12 @@ doc.Render(f)
 | `c.Text(text, opts...)` | Adicionar texto com opções de estilo |
 | `c.Table(header, rows, opts...)` | Adicionar uma tabela |
 | `c.Image(data, opts...)` | Adicionar uma imagem (JPEG/PNG) |
+| `c.QRCode(data, opts...)` | Adicionar QR code |
+| `c.Barcode(data, opts...)` | Adicionar código de barras (Code 128) |
+| `c.List(items, opts...)` | Adicionar lista com marcadores |
+| `c.OrderedList(items, opts...)` | Adicionar lista numerada |
+| `c.PageNumber(opts...)` | Adicionar número de página atual |
+| `c.TotalPages(opts...)` | Adicionar total de páginas |
 | `c.Line(opts...)` | Adicionar uma linha horizontal |
 | `c.Spacer(height)` | Adicionar espaço vertical |
 
@@ -299,6 +312,10 @@ doc.Render(f)
 | `template.FontFamily(name)` | Usar fonte registrada |
 | `template.TextColor(color)` | Cor do texto |
 | `template.BgColor(color)` | Cor de fundo |
+| `template.Underline()` | Decoração de sublinhado |
+| `template.Strikethrough()` | Decoração de tachado |
+| `template.LetterSpacing(pts)` | Espaçamento de letras em pontos |
+| `template.TextIndent(value)` | Recuo de primeira linha |
 | `template.AlignLeft()` | Alinhamento à esquerda (padrão) |
 | `template.AlignCenter()` | Alinhamento centralizado |
 | `template.AlignRight()` | Alinhamento à direita |
@@ -310,6 +327,7 @@ doc.Render(f)
 | `template.ColumnWidths(w...)` | Larguras de coluna em porcentagem |
 | `template.TableHeaderStyle(opts...)` | Estilo da linha de cabeçalho |
 | `template.TableStripe(color)` | Cor de linhas alternadas |
+| `template.TableCellVAlign(align)` | Alinhamento vertical da célula (Top/Middle/Bottom) |
 
 ### Opções de imagem
 
@@ -317,6 +335,30 @@ doc.Render(f)
 |---|---|
 | `template.FitWidth(value)` | Escalar à largura (mantém proporção) |
 | `template.FitHeight(value)` | Escalar à altura (mantém proporção) |
+
+### Opções de QR code
+
+| Opção | Descrição |
+|---|---|
+| `template.QRSize(value)` | Tamanho do QR code |
+| `template.QRErrorCorrection(level)` | Nível de correção de erros (L/M/Q/H) |
+| `template.QRScale(n)` | Fator de escala do módulo |
+
+### Opções de código de barras
+
+| Opção | Descrição |
+|---|---|
+| `template.BarcodeWidth(value)` | Largura do código de barras |
+| `template.BarcodeHeight(value)` | Altura do código de barras |
+| `template.BarcodeFormat(fmt)` | Formato do código de barras (Code 128) |
+
+### Geração de templates
+
+| Função | Descrição |
+|---|---|
+| `template.FromJSON(schema, data)` | Gerar documento a partir de esquema JSON |
+| `template.FromTemplate(tmpl, data)` | Gerar documento a partir de template Go |
+| `template.TemplateFuncMap()` | Obter funções auxiliares de template (inclui `toJSON`) |
 
 ### Opções de linha
 

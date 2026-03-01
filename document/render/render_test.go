@@ -682,6 +682,79 @@ func TestEscapeStringPDF(t *testing.T) {
 	}
 }
 
+func TestEscapeStringPDF_WinAnsi(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  byte // expected single-byte output for a one-character input
+	}{
+		{"bullet", "\u2022", 0x95},
+		{"endash", "\u2013", 0x96},
+		{"emdash", "\u2014", 0x97},
+		{"euro", "\u20AC", 0x80},
+		{"ellipsis", "\u2026", 0x85},
+		{"trademark", "\u2122", 0x99},
+		{"leftdoublequote", "\u201C", 0x93},
+		{"rightdoublequote", "\u201D", 0x94},
+		{"leftsinglequote", "\u2018", 0x91},
+		{"rightsinglequote", "\u2019", 0x92},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := escapeStringPDF(tt.input)
+			if len(got) != 1 || got[0] != tt.want {
+				t.Errorf("escapeStringPDF(%q) = %x, want single byte %x", tt.input, []byte(got), tt.want)
+			}
+		})
+	}
+}
+
+func TestEscapeStringPDF_Latin1(t *testing.T) {
+	// Latin-1 supplement characters (0xA0–0xFF) should map directly.
+	tests := []struct {
+		name  string
+		input rune
+		want  byte
+	}{
+		{"copyright", '©', 0xA9},
+		{"registered", '®', 0xAE},
+		{"degree", '°', 0xB0},
+		{"umlaut_u", 'ü', 0xFC},
+		{"ntilde", 'ñ', 0xF1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := escapeStringPDF(string(tt.input))
+			if len(got) != 1 || got[0] != tt.want {
+				t.Errorf("escapeStringPDF(%q) = %x, want single byte %x", string(tt.input), []byte(got), tt.want)
+			}
+		})
+	}
+}
+
+func TestEscapeStringPDF_UnmappedRune(t *testing.T) {
+	// CJK characters are outside WinAnsiEncoding; should be replaced with '?'.
+	got := escapeStringPDF("日本語")
+	if got != "???" {
+		t.Errorf("escapeStringPDF(CJK) = %q, want %q", got, "???")
+	}
+}
+
+func TestRuneToWinAnsi(t *testing.T) {
+	// ASCII
+	if b := runeToWinAnsi('A'); b != 'A' {
+		t.Errorf("runeToWinAnsi('A') = %x, want %x", b, 'A')
+	}
+	// Bullet
+	if b := runeToWinAnsi('\u2022'); b != 0x95 {
+		t.Errorf("runeToWinAnsi(bullet) = %x, want 0x95", b)
+	}
+	// Unmapped
+	if b := runeToWinAnsi('日'); b != '?' {
+		t.Errorf("runeToWinAnsi(CJK) = %x, want '?'", b)
+	}
+}
+
 func TestImageKey(t *testing.T) {
 	data1 := []byte{0x01, 0x02, 0x03}
 	data2 := []byte{0x04, 0x05, 0x06}
