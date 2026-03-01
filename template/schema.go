@@ -257,6 +257,18 @@ func parseColor(s string) (pdf.Color, error) {
 	return pdf.Color{}, fmt.Errorf("unknown color: %q", s)
 }
 
+// parseAlignOption converts an alignment string to a TextOption.
+func parseAlignOption(align string) TextOption {
+	switch strings.ToLower(align) {
+	case "center":
+		return AlignCenter()
+	case "right":
+		return AlignRight()
+	default:
+		return AlignLeft()
+	}
+}
+
 // applySchemaStyle converts a SchemaStyle to a slice of TextOption.
 func applySchemaStyle(ss *SchemaStyle) []TextOption {
 	if ss == nil {
@@ -273,14 +285,7 @@ func applySchemaStyle(ss *SchemaStyle) []TextOption {
 		opts = append(opts, Italic())
 	}
 	if ss.Align != "" {
-		switch strings.ToLower(ss.Align) {
-		case "center":
-			opts = append(opts, AlignCenter())
-		case "right":
-			opts = append(opts, AlignRight())
-		default:
-			opts = append(opts, AlignLeft())
-		}
+		opts = append(opts, parseAlignOption(ss.Align))
 	}
 	if ss.Color != "" {
 		if c, err := parseColor(ss.Color); err == nil {
@@ -459,35 +464,21 @@ func buildSchemaElement(c *ColBuilder, elem SchemaElement) {
 		opts := applySchemaStyle(elem.Style)
 		c.Text(elem.Content, opts...)
 	case "image":
-		if elem.Image != nil {
-			buildSchemaImage(c, elem.Image)
-		}
+		buildSchemaImage(c, elem.Image)
 	case "table":
-		if elem.Table != nil {
-			buildSchemaTable(c, elem.Table)
-		}
+		buildSchemaTable(c, elem.Table)
 	case "list":
-		if elem.List != nil {
-			buildSchemaList(c, elem.List)
-		}
+		buildSchemaList(c, elem.List)
 	case "line":
-		if elem.Line != nil {
-			buildSchemaLine(c, elem.Line)
-		} else {
-			c.Line()
-		}
+		buildSchemaLine(c, elem.Line)
 	case "spacer":
 		if v, err := parseValue(elem.Height); err == nil {
 			c.Spacer(v)
 		}
 	case "qrcode":
-		if elem.QRCode != nil {
-			buildSchemaQRCode(c, elem.QRCode)
-		}
+		buildSchemaQRCode(c, elem.QRCode)
 	case "barcode":
-		if elem.Barcode != nil {
-			buildSchemaBarcode(c, elem.Barcode)
-		}
+		buildSchemaBarcode(c, elem.Barcode)
 	case "pagenumber":
 		opts := applySchemaStyle(elem.Style)
 		c.PageNumber(opts...)
@@ -498,6 +489,9 @@ func buildSchemaElement(c *ColBuilder, elem SchemaElement) {
 }
 
 func buildSchemaImage(c *ColBuilder, img *SchemaImage) {
+	if img == nil {
+		return
+	}
 	data, err := decodeBase64Image(img.Src)
 	if err != nil {
 		return // silently skip, consistent with builder API pattern
@@ -517,6 +511,9 @@ func buildSchemaImage(c *ColBuilder, img *SchemaImage) {
 }
 
 func buildSchemaTable(c *ColBuilder, tbl *SchemaTable) {
+	if tbl == nil {
+		return
+	}
 	var opts []TableOption
 	if len(tbl.ColumnWidths) > 0 {
 		opts = append(opts, ColumnWidths(tbl.ColumnWidths...))
@@ -534,6 +531,9 @@ func buildSchemaTable(c *ColBuilder, tbl *SchemaTable) {
 }
 
 func buildSchemaList(c *ColBuilder, lst *SchemaList) {
+	if lst == nil {
+		return
+	}
 	if strings.ToLower(lst.Type) == "ordered" {
 		c.OrderedList(lst.Items)
 	} else {
@@ -542,6 +542,10 @@ func buildSchemaList(c *ColBuilder, lst *SchemaList) {
 }
 
 func buildSchemaLine(c *ColBuilder, ln *SchemaLine) {
+	if ln == nil {
+		c.Line()
+		return
+	}
 	var opts []LineOption
 	if ln.Color != "" {
 		if clr, err := parseColor(ln.Color); err == nil {
@@ -557,6 +561,9 @@ func buildSchemaLine(c *ColBuilder, ln *SchemaLine) {
 }
 
 func buildSchemaQRCode(c *ColBuilder, qr *SchemaQRCode) {
+	if qr == nil {
+		return
+	}
 	var opts []QRCodeOption
 	if qr.Size != "" {
 		if v, err := parseValue(qr.Size); err == nil {
@@ -567,6 +574,9 @@ func buildSchemaQRCode(c *ColBuilder, qr *SchemaQRCode) {
 }
 
 func buildSchemaBarcode(c *ColBuilder, bc *SchemaBarcode) {
+	if bc == nil {
+		return
+	}
 	var opts []BarcodeOption
 	if bc.Width != "" {
 		if v, err := parseValue(bc.Width); err == nil {
