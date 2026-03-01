@@ -1,0 +1,94 @@
+%PDF-1.7
+3 0 obj
+<< /BaseFont /Helvetica-Bold /Subtype /Type1 /Type /Font >>
+endobj
+4 0 obj
+<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
+endobj
+5 0 obj
+<< /Length 976 >>
+stream
+0 g
+BT
+/F1 20 Tf
+56.693 765.197 Td
+(Text Indent Demo) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+80.693 726.5198 Td
+(This paragraph has a 24pt first-line indent. The first line starts further) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 712.1197999999999 Td
+(to the right, while subsequent lines wrap at the normal left margin. This is) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 697.7198 Td
+(commonly used in book typography to indicate new paragraphs.) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+104.693 669.1465499999999 Td
+(This paragraph uses a larger 48pt indent for a more dramatic effect. The) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 654.74655 Td
+(indentation makes it easy to distinguish where a new paragraph begins without) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 640.34655 Td
+(adding extra vertical space.) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 611.7733000000001 Td
+(No indent on this paragraph for comparison. Standard left-aligned text without) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 597.3733 Td
+(any first-line indentation starts flush with the left margin.) Tj
+ET
+
+endstream
+endobj
+6 0 obj
+<< /Contents 5 0 R /MediaBox [0 0 595.28 841.89] /Parent 2 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [6 0 R] /Type /Pages >>
+endobj
+7 0 obj
+<< /Producer (gpdf) >>
+endobj
+1 0 obj
+<< /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000001418 00000 n 
+0000001323 00000 n 
+0000000009 00000 n 
+0000000084 00000 n 
+0000000154 00000 n 
+0000001181 00000 n 
+0000001380 00000 n 
+trailer
+<< /Info 7 0 R /Root 1 0 R /Size 8 >>
+startxref
+1467
+%%EOF

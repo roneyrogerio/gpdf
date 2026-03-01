@@ -1,0 +1,242 @@
+%PDF-1.7
+3 0 obj
+<< /BaseFont /Helvetica-Bold /Subtype /Type1 /Type /Font >>
+endobj
+4 0 obj
+<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
+endobj
+5 0 obj
+<< /Length 2592 >>
+stream
+0 g
+BT
+/F1 18 Tf
+56.693 767.197 Td
+(Color System Examples) Tj
+ET
+0 g
+BT
+/F1 12 Tf
+56.693 737.4237499999999 Td
+(Predefined Colors:) Tj
+ET
+1 0 0 rg
+BT
+/F2 12 Tf
+56.693 723.02375 Td
+(Red) Tj
+ET
+0 1 0 rg
+BT
+/F2 12 Tf
+56.693 708.62375 Td
+(Green) Tj
+ET
+0 0 1 rg
+BT
+/F2 12 Tf
+56.693 694.22375 Td
+(Blue) Tj
+ET
+1 1 0 rg
+BT
+/F2 12 Tf
+56.693 679.82375 Td
+(Yellow) Tj
+ET
+0 1 1 rg
+BT
+/F2 12 Tf
+56.693 665.4237499999999 Td
+(Cyan) Tj
+ET
+1 0 1 rg
+BT
+/F2 12 Tf
+56.693 651.02375 Td
+(Magenta) Tj
+ET
+0 g
+BT
+/F1 12 Tf
+56.693 622.4504999999999 Td
+(RGB Colors \(float\):) Tj
+ET
+1 0.5 0 rg
+BT
+/F2 12 Tf
+56.693 608.0504999999999 Td
+(RGB\(1.0, 0.5, 0.0\) - Orange) Tj
+ET
+0.5 0 0.5 rg
+BT
+/F2 12 Tf
+56.693 593.6505 Td
+(RGB\(0.5, 0.0, 0.5\) - Purple) Tj
+ET
+0 0.5 0.5 rg
+BT
+/F2 12 Tf
+56.693 579.2505 Td
+(RGB\(0.0, 0.5, 0.5\) - Teal) Tj
+ET
+0 g
+BT
+/F1 12 Tf
+56.693 550.67725 Td
+(Hex Colors:) Tj
+ET
+1 0.4196078431372549 0.4196078431372549 rg
+BT
+/F2 12 Tf
+56.693 536.2772500000001 Td
+(#FF6B6B - Coral) Tj
+ET
+0.3058823529411765 0.803921568627451 0.7686274509803922 rg
+BT
+/F2 12 Tf
+56.693 521.87725 Td
+(#4ECDC4 - Turquoise) Tj
+ET
+0.27058823529411763 0.7176470588235294 0.8196078431372549 rg
+BT
+/F2 12 Tf
+56.693 507.47725 Td
+(#45B7D1 - Sky Blue) Tj
+ET
+0.5882352941176471 0.807843137254902 0.7058823529411765 rg
+BT
+/F2 12 Tf
+56.693 493.07725000000005 Td
+(#96CEB4 - Sage) Tj
+ET
+0 g
+BT
+/F1 12 Tf
+56.693 464.504 Td
+(Grayscale:) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 450.10400000000004 Td
+(Gray\(0.0\) - Black) Tj
+ET
+0.3 g
+BT
+/F2 12 Tf
+56.693 435.704 Td
+(Gray\(0.3\) - Dark gray) Tj
+ET
+0.5 g
+BT
+/F2 12 Tf
+56.693 421.30400000000003 Td
+(Gray\(0.5\) - Medium gray) Tj
+ET
+0.7 g
+BT
+/F2 12 Tf
+56.693 406.904 Td
+(Gray\(0.7\) - Light gray) Tj
+ET
+0 g
+BT
+/F1 12 Tf
+56.693 378.33075 Td
+(Background Color Swatches:) Tj
+ET
+q
+1 0 0 rg
+56.693 361.53075000000007 120.4735 14.399999999999999 re
+f
+Q
+q
+1 0 0 rg
+56.693 361.53075000000007 18 14.399999999999999 re
+f
+Q
+1 g
+BT
+/F2 12 Tf
+56.693 363.93075000000005 Td
+(Red) Tj
+ET
+q
+0 1 0 rg
+177.16649999999998 361.53075000000007 120.4735 14.399999999999999 re
+f
+Q
+q
+0 1 0 rg
+177.16649999999998 361.53075000000007 30 14.399999999999999 re
+f
+Q
+1 g
+BT
+/F2 12 Tf
+177.16649999999998 363.93075000000005 Td
+(Green) Tj
+ET
+q
+0 0 1 rg
+297.64 361.53075000000007 120.4735 14.399999999999999 re
+f
+Q
+q
+0 0 1 rg
+297.64 361.53075000000007 24 14.399999999999999 re
+f
+Q
+1 g
+BT
+/F2 12 Tf
+297.64 363.93075000000005 Td
+(Blue) Tj
+ET
+q
+1 1 0 rg
+418.1135 361.53075000000007 120.4735 14.399999999999999 re
+f
+Q
+q
+1 1 0 rg
+418.1135 361.53075000000007 36 14.399999999999999 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+418.1135 363.93075000000005 Td
+(Yellow) Tj
+ET
+
+endstream
+endobj
+6 0 obj
+<< /Contents 5 0 R /MediaBox [0 0 595.28 841.89] /Parent 2 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [6 0 R] /Type /Pages >>
+endobj
+7 0 obj
+<< /Producer (gpdf) >>
+endobj
+1 0 obj
+<< /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000003035 00000 n 
+0000002940 00000 n 
+0000000009 00000 n 
+0000000084 00000 n 
+0000000154 00000 n 
+0000002798 00000 n 
+0000002997 00000 n 
+trailer
+<< /Info 7 0 R /Root 1 0 R /Size 8 >>
+startxref
+3084
+%%EOF

@@ -1,0 +1,93 @@
+%PDF-1.7
+3 0 obj
+<< /BaseFont /Helvetica-Bold /Subtype /Type1 /Type /Font >>
+endobj
+4 0 obj
+<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
+endobj
+5 0 obj
+<< /Length 794 >>
+stream
+0 g
+BT
+/F1 18 Tf
+113.386 795.5435 Td
+(Custom Margins) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+113.386 765.77025 Td
+(This page has asymmetric margins: 10mm top/bottom, 40mm) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+113.386 751.3702499999999 Td
+(left/right. The wide side margins create a narrower text) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+113.386 736.97025 Td
+(area, similar to a book layout.) Tj
+ET
+q
+0.8 g
+113.386 719.3969999999999 368.508 1 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+113.386 693.22375 Td
+(Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+113.386 678.82375 Td
+(do eiusmod tempor incididunt ut labore et dolore magna) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+113.386 664.4237499999999 Td
+(aliqua. Ut enim ad minim veniam, quis nostrud exercitation) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+113.386 650.0237500000001 Td
+(ullamco laboris.) Tj
+ET
+
+endstream
+endobj
+6 0 obj
+<< /Contents 5 0 R /MediaBox [0 0 595.28 841.89] /Parent 2 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [6 0 R] /Type /Pages >>
+endobj
+7 0 obj
+<< /Producer (gpdf) >>
+endobj
+1 0 obj
+<< /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000001236 00000 n 
+0000001141 00000 n 
+0000000009 00000 n 
+0000000084 00000 n 
+0000000154 00000 n 
+0000000999 00000 n 
+0000001198 00000 n 
+trailer
+<< /Info 7 0 R /Root 1 0 R /Size 8 >>
+startxref
+1285
+%%EOF

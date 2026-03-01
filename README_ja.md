@@ -1,0 +1,390 @@
+# gpdf
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/gpdf-dev/gpdf.svg)](https://pkg.go.dev/github.com/gpdf-dev/gpdf)
+[![CI](https://github.com/gpdf-dev/gpdf/actions/workflows/check-code.yml/badge.svg)](https://github.com/gpdf-dev/gpdf/actions/workflows/check-code.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gpdf-dev/gpdf)](https://goreportcard.com/report/github.com/gpdf-dev/gpdf)
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.22-blue)](https://go.dev/)
+
+[English](README.md) | **日本語** | [中文](README_zh.md) | [한국어](README_ko.md) | [Español](README_es.md) | [Português](README_pt.md)
+
+純粋なGoで実装された、外部依存ゼロのPDF生成ライブラリ。レイヤードアーキテクチャと宣言的なビルダーAPIを提供します。
+
+## 特徴
+
+- **外部依存ゼロ** — Go標準ライブラリのみ使用
+- **レイヤードアーキテクチャ** — 低レベルPDFプリミティブ、ドキュメントモデル、高レベルテンプレートAPI
+- **12カラムグリッドシステム** — Bootstrap風のレスポンシブレイアウト
+- **TrueTypeフォント対応** — カスタムフォントの埋め込みとサブセット化
+- **CJK対応** — 日中韓テキストを初日からフルサポート
+- **テーブル** — ヘッダー、カラム幅指定、ストライプ行
+- **ヘッダー＆フッター** — 全ページで一貫した表示
+- **複数の単位** — pt, mm, cm, in, em, %
+- **カラースペース** — RGB、グレースケール、CMYK
+- **画像** — JPEGとPNGの埋め込み（フィットオプション対応）
+- **ドキュメントメタデータ** — タイトル、著者、件名、作成者
+
+## アーキテクチャ
+
+```
+┌─────────────────────────────────────┐
+│  gpdf (エントリーポイント)              │
+├─────────────────────────────────────┤
+│  template  — ビルダーAPI、グリッド     │  レイヤー 3
+├─────────────────────────────────────┤
+│  document  — ノード、スタイル、レイアウト │  レイヤー 2
+├─────────────────────────────────────┤
+│  pdf       — Writer、フォント、ストリーム │  レイヤー 1
+└─────────────────────────────────────┘
+```
+
+## 要件
+
+- Go 1.22 以降
+
+## インストール
+
+```bash
+go get github.com/gpdf-dev/gpdf
+```
+
+## クイックスタート
+
+```go
+package main
+
+import (
+	"os"
+
+	"github.com/gpdf-dev/gpdf"
+	"github.com/gpdf-dev/gpdf/document"
+	"github.com/gpdf-dev/gpdf/template"
+)
+
+func main() {
+	doc := gpdf.NewDocument(
+		gpdf.WithPageSize(gpdf.A4),
+		gpdf.WithMargins(document.UniformEdges(document.Mm(20))),
+	)
+
+	page := doc.AddPage()
+	page.AutoRow(func(r *template.RowBuilder) {
+		r.Col(12, func(c *template.ColBuilder) {
+			c.Text("Hello, World!", template.FontSize(24), template.Bold())
+		})
+	})
+
+	data, _ := doc.Generate()
+	os.WriteFile("hello.pdf", data, 0644)
+}
+```
+
+## 使用例
+
+### テキストスタイリング
+
+フォントサイズ、太さ、スタイル、色、背景色、配置:
+
+```go
+page.AutoRow(func(r *template.RowBuilder) {
+	r.Col(12, func(c *template.ColBuilder) {
+		c.Text("大きな太字タイトル", template.FontSize(24), template.Bold())
+		c.Text("イタリックテキスト", template.Italic())
+		c.Text("太字 + イタリック", template.Bold(), template.Italic())
+		c.Text("赤いテキスト", template.TextColor(pdf.Red))
+		c.Text("カスタムカラー", template.TextColor(pdf.RGBHex(0x336699)))
+		c.Text("背景色付き", template.BgColor(pdf.Yellow))
+		c.Text("中央揃え", template.AlignCenter())
+		c.Text("右揃え", template.AlignRight())
+	})
+})
+```
+
+### 12カラムグリッドレイアウト
+
+Bootstrap風の12カラムグリッドでレイアウトを構築:
+
+```go
+// 2等分カラム
+page.AutoRow(func(r *template.RowBuilder) {
+	r.Col(6, func(c *template.ColBuilder) {
+		c.Text("左半分")
+	})
+	r.Col(6, func(c *template.ColBuilder) {
+		c.Text("右半分")
+	})
+})
+
+// サイドバー + メインコンテンツ
+page.AutoRow(func(r *template.RowBuilder) {
+	r.Col(3, func(c *template.ColBuilder) {
+		c.Text("サイドバー")
+	})
+	r.Col(9, func(c *template.ColBuilder) {
+		c.Text("メインコンテンツ")
+	})
+})
+```
+
+### 固定高さの行
+
+`Row()` で高さを指定、`AutoRow()` でコンテンツに合わせた自動高さ:
+
+```go
+// 固定高さ: 30mm
+page.Row(document.Mm(30), func(r *template.RowBuilder) {
+	r.Col(12, func(c *template.ColBuilder) {
+		c.Text("この行の高さは30mmです")
+	})
+})
+```
+
+### テーブル
+
+基本的なテーブル:
+
+```go
+c.Table(
+	[]string{"商品名", "数量", "価格"},
+	[][]string{
+		{"ウィジェット", "10", "¥500"},
+		{"ガジェット", "3", "¥1,200"},
+	},
+)
+```
+
+スタイル付きテーブル（ヘッダー色、カラム幅、ストライプ行）:
+
+```go
+c.Table(
+	[]string{"商品", "カテゴリ", "数量", "単価", "合計"},
+	[][]string{
+		{"ノートPC Pro 15", "電子機器", "2", "¥129,900", "¥259,800"},
+		{"ワイヤレスマウス", "周辺機器", "10", "¥2,999", "¥29,990"},
+	},
+	template.ColumnWidths(30, 20, 10, 20, 20),
+	template.TableHeaderStyle(
+		template.TextColor(pdf.White),
+		template.BgColor(pdf.RGBHex(0x1A237E)),
+	),
+	template.TableStripe(pdf.RGBHex(0xF5F5F5)),
+)
+```
+
+### 画像
+
+JPEGとPNG画像の埋め込み（フィットオプション対応）:
+
+```go
+c.Image(imgData)                                      // デフォルトサイズ
+c.Image(imgData, template.FitWidth(document.Mm(80)))   // 幅に合わせる
+c.Image(imgData, template.FitHeight(document.Mm(30)))  // 高さに合わせる
+```
+
+### 罫線とスペーサー
+
+```go
+c.Line()                                           // デフォルト（グレー、1pt）
+c.Line(template.LineColor(pdf.Red))                 // 色付き
+c.Line(template.LineThickness(document.Pt(3)))      // 太線
+c.Spacer(document.Mm(5))                            // 5mmの垂直間隔
+```
+
+### ヘッダー＆フッター
+
+全ページに繰り返し表示されるヘッダーとフッター:
+
+```go
+doc.Header(func(p *template.PageBuilder) {
+	p.AutoRow(func(r *template.RowBuilder) {
+		r.Col(6, func(c *template.ColBuilder) {
+			c.Text("ACME株式会社", template.Bold(), template.FontSize(10))
+		})
+		r.Col(6, func(c *template.ColBuilder) {
+			c.Text("社外秘", template.AlignRight(), template.FontSize(10),
+				template.TextColor(pdf.Gray(0.5)))
+		})
+	})
+})
+
+doc.Footer(func(p *template.PageBuilder) {
+	p.AutoRow(func(r *template.RowBuilder) {
+		r.Col(12, func(c *template.ColBuilder) {
+			c.Text("gpdfで生成", template.AlignCenter(),
+				template.FontSize(8), template.TextColor(pdf.Gray(0.5)))
+		})
+	})
+})
+```
+
+### ドキュメントメタデータ
+
+```go
+doc := gpdf.NewDocument(
+	gpdf.WithPageSize(gpdf.A4),
+	gpdf.WithMetadata(document.DocumentMetadata{
+		Title:   "年次報告書 2026",
+		Author:  "gpdf Library",
+		Subject: "ドキュメントメタデータの例",
+		Creator: "My Application",
+	}),
+)
+```
+
+### ページサイズとマージン
+
+```go
+// 利用可能なページサイズ
+document.A4      // 210mm x 297mm
+document.A3      // 297mm x 420mm
+document.Letter  // 8.5in x 11in
+document.Legal   // 8.5in x 14in
+
+// 均一マージン
+template.WithMargins(document.UniformEdges(document.Mm(20)))
+
+// 非対称マージン
+template.WithMargins(document.Edges{
+	Top:    document.Mm(10),
+	Right:  document.Mm(40),
+	Bottom: document.Mm(10),
+	Left:   document.Mm(40),
+})
+```
+
+### 出力オプション
+
+```go
+// Generateは[]byteを返す
+data, err := doc.Generate()
+
+// Renderは任意のio.Writerに書き込む
+var buf bytes.Buffer
+err := doc.Render(&buf)
+
+// ファイルに直接書き込む
+f, _ := os.Create("output.pdf")
+defer f.Close()
+doc.Render(f)
+```
+
+## APIリファレンス
+
+### ドキュメントオプション
+
+| 関数 | 説明 |
+|---|---|
+| `WithPageSize(size)` | ページサイズを設定 (A4, A3, Letter, Legal) |
+| `WithMargins(edges)` | ページマージンを設定 |
+| `WithFont(family, data)` | TrueTypeフォントを登録 |
+| `WithDefaultFont(family, size)` | デフォルトフォントを設定 |
+| `WithMetadata(meta)` | ドキュメントメタデータを設定 |
+
+### カラムコンテンツ
+
+| メソッド | 説明 |
+|---|---|
+| `c.Text(text, opts...)` | スタイルオプション付きテキストを追加 |
+| `c.Table(header, rows, opts...)` | テーブルを追加 |
+| `c.Image(data, opts...)` | 画像を追加 (JPEG/PNG) |
+| `c.Line(opts...)` | 水平線を追加 |
+| `c.Spacer(height)` | 垂直スペースを追加 |
+
+### テキストオプション
+
+| オプション | 説明 |
+|---|---|
+| `template.FontSize(size)` | フォントサイズをポイント単位で設定 |
+| `template.Bold()` | 太字 |
+| `template.Italic()` | イタリック |
+| `template.FontFamily(name)` | 登録済みフォントを使用 |
+| `template.TextColor(color)` | テキスト色を設定 |
+| `template.BgColor(color)` | 背景色を設定 |
+| `template.AlignLeft()` | 左揃え（デフォルト） |
+| `template.AlignCenter()` | 中央揃え |
+| `template.AlignRight()` | 右揃え |
+
+### テーブルオプション
+
+| オプション | 説明 |
+|---|---|
+| `template.ColumnWidths(w...)` | カラム幅をパーセンテージで設定 |
+| `template.TableHeaderStyle(opts...)` | ヘッダー行のスタイル設定 |
+| `template.TableStripe(color)` | 交互行の色を設定 |
+
+### 画像オプション
+
+| オプション | 説明 |
+|---|---|
+| `template.FitWidth(value)` | 幅に合わせてスケール（アスペクト比維持） |
+| `template.FitHeight(value)` | 高さに合わせてスケール（アスペクト比維持） |
+
+### 罫線オプション
+
+| オプション | 説明 |
+|---|---|
+| `template.LineColor(color)` | 罫線の色を設定 |
+| `template.LineThickness(value)` | 罫線の太さを設定 |
+
+### 単位
+
+```go
+document.Pt(72)    // ポイント (1/72インチ)
+document.Mm(10)    // ミリメートル
+document.Cm(2.5)   // センチメートル
+document.In(1)     // インチ
+document.Em(1.5)   // フォントサイズに対する相対値
+document.Pct(50)   // パーセント
+```
+
+### カラー
+
+```go
+pdf.RGB(0.2, 0.4, 0.8)   // RGB (0.0–1.0)
+pdf.RGBHex(0xFF5733)      // 16進数からRGB
+pdf.Gray(0.5)             // グレースケール
+pdf.CMYK(0, 0.5, 1, 0)   // CMYK
+
+// 定義済みカラー
+pdf.Black, pdf.White, pdf.Red, pdf.Green, pdf.Blue
+pdf.Yellow, pdf.Cyan, pdf.Magenta
+```
+
+## ベンチマーク
+
+[go-pdf/fpdf](https://github.com/go-pdf/fpdf)、[signintech/gopdf](https://github.com/signintech/gopdf)、[maroto v2](https://github.com/johnfercher/maroto) との比較。
+5回実行の中央値、各100イテレーション。Apple M1、Go 1.25。
+
+**実行時間**（低いほど良い）:
+
+| ベンチマーク | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| 1ページ | **13 µs** | 132 µs | 423 µs | 237 µs |
+| テーブル (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
+| 100ページ | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
+| 複合ドキュメント | **133 µs** | 254 µs | 997 µs | 10.4 ms |
+
+**メモリ使用量**（低いほど良い）:
+
+| ベンチマーク | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| 1ページ | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
+| テーブル (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
+| 100ページ | **909 KB** | 121 MB | 83 MB | 4.0 MB |
+| 複合ドキュメント | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
+
+### なぜ gpdf は速いのか？
+
+- **1ページ** — ビルド→レイアウト→レンダリングのシングルパスパイプラインで中間データ構造を持たない。全体を通して具体的な構造体型を使用（`interface{}` ボクシングなし）し、ドキュメントツリーを最小限のヒープ割り当てで構築。
+- **テーブル** — セル内容を再利用可能な `strings.Builder` バッファを通じて PDF コンテンストリームコマンドとして直接書き出す。セルごとのオブジェクトラッピングやフォントの繰り返し検索がなく、フォントはドキュメントごとに1回だけ解決。
+- **100ページ** — レイアウトは O(n) で線形にスケール。オーバーフローページネーションはスライス参照で残りのノードを渡す（ディープコピーなし）。フォントは1回だけパースされ全ページで共有。
+- **複合ドキュメント** — 再計測なしのシングルパスレイアウトが上記すべてを統合。フォントサブセッティングは実際に使用されたグリフのみを埋め込み、Flate 圧縮がデフォルトで適用されるため、メモリと出力サイズの両方を小さく保つ。
+
+ベンチマーク実行:
+
+```bash
+cd _benchmark && go test -bench=. -benchmem -count=5
+```
+
+## ライセンス
+
+MIT

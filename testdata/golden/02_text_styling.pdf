@@ -1,0 +1,204 @@
+%PDF-1.7
+3 0 obj
+<< /BaseFont /Helvetica-Bold /Subtype /Type1 /Type /Font >>
+endobj
+4 0 obj
+<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
+endobj
+5 0 obj
+<< /BaseFont /Helvetica-Oblique /Subtype /Type1 /Type /Font >>
+endobj
+6 0 obj
+<< /BaseFont /Helvetica-BoldOblique /Subtype /Type1 /Type /Font >>
+endobj
+7 0 obj
+<< /Length 1828 >>
+stream
+0 g
+BT
+/F1 20 Tf
+56.693 765.197 Td
+(Text Styling Examples) Tj
+ET
+0 g
+BT
+/F2 8 Tf
+56.693 739.02375 Td
+(Font Size 8pt) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 725.42375 Td
+(Font Size 12pt \(default\)) Tj
+ET
+0 g
+BT
+/F2 18 Tf
+56.693 705.02375 Td
+(Font Size 18pt) Tj
+ET
+0 g
+BT
+/F2 24 Tf
+56.693 677.4237499999999 Td
+(Font Size 24pt) Tj
+ET
+0 g
+BT
+/F2 36 Tf
+56.693 636.62375 Td
+(Font Size 36pt) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 603.2505 Td
+(Normal text) Tj
+ET
+0 g
+BT
+/F1 12 Tf
+56.693 588.8505 Td
+(Bold text) Tj
+ET
+0 g
+BT
+/F3 12 Tf
+56.693 574.4504999999999 Td
+(Italic text) Tj
+ET
+0 g
+BT
+/F4 12 Tf
+56.693 560.0505 Td
+(Bold + Italic text) Tj
+ET
+1 0 0 rg
+BT
+/F2 12 Tf
+56.693 531.47725 Td
+(Red text) Tj
+ET
+0 1 0 rg
+BT
+/F2 12 Tf
+56.693 517.07725 Td
+(Green text) Tj
+ET
+0 0 1 rg
+BT
+/F2 12 Tf
+56.693 502.67724999999996 Td
+(Blue text) Tj
+ET
+1 0.5 0 rg
+BT
+/F2 12 Tf
+56.693 488.27725000000004 Td
+(Custom color \(orange\)) Tj
+ET
+0.2 0.4 0.6 rg
+BT
+/F2 12 Tf
+56.693 473.87725 Td
+(Hex color \(#336699\)) Tj
+ET
+q
+1 1 0 rg
+56.693 442.90400000000005 481.894 14.399999999999999 re
+f
+Q
+q
+1 1 0 rg
+56.693 442.90400000000005 102 14.399999999999999 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 445.30400000000003 Td
+(Yellow background) Tj
+ET
+q
+0 1 1 rg
+56.693 428.5040000000001 481.894 14.399999999999999 re
+f
+Q
+q
+0 1 1 rg
+56.693 428.5040000000001 90 14.399999999999999 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 430.90400000000005 Td
+(Cyan background) Tj
+ET
+q
+0.2 0.2 0.2 rg
+56.693 414.10400000000004 481.894 14.399999999999999 re
+f
+Q
+q
+0.2 0.2 0.2 rg
+56.693 414.10400000000004 174 14.399999999999999 re
+f
+Q
+1 g
+BT
+/F2 12 Tf
+56.693 416.504 Td
+(White text on dark background) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 387.93075000000005 Td
+(Left aligned \(default\)) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+255.64 373.53075000000007 Td
+(Center aligned) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+460.587 359.13075000000003 Td
+(Right aligned) Tj
+ET
+
+endstream
+endobj
+8 0 obj
+<< /Contents 7 0 R /MediaBox [0 0 595.28 841.89] /Parent 2 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [8 0 R] /Type /Pages >>
+endobj
+9 0 obj
+<< /Producer (gpdf) >>
+endobj
+1 0 obj
+<< /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000002451 00000 n 
+0000002356 00000 n 
+0000000009 00000 n 
+0000000084 00000 n 
+0000000154 00000 n 
+0000000232 00000 n 
+0000000314 00000 n 
+0000002194 00000 n 
+0000002413 00000 n 
+trailer
+<< /Info 9 0 R /Root 1 0 R /Size 10 >>
+startxref
+2500
+%%EOF

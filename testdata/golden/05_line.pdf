@@ -1,0 +1,145 @@
+%PDF-1.7
+3 0 obj
+<< /BaseFont /Helvetica-Bold /Subtype /Type1 /Type /Font >>
+endobj
+4 0 obj
+<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
+endobj
+5 0 obj
+<< /Length 1072 >>
+stream
+0 g
+BT
+/F1 18 Tf
+56.693 767.197 Td
+(Line / Horizontal Rule Examples) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 737.4237499999999 Td
+(Default line \(gray, 1pt\):) Tj
+ET
+q
+0.8 g
+56.693 734.02375 481.894 1 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 707.8505 Td
+(Red line:) Tj
+ET
+q
+1 0 0 rg
+56.693 704.4505 481.894 1 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 683.94655 Td
+(Blue line:) Tj
+ET
+q
+0 0 1 rg
+56.693 680.54655 481.894 1 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 660.0426 Td
+(Green line:) Tj
+ET
+q
+0 1 0 rg
+56.693 656.6426 481.894 1 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 630.4693500000001 Td
+(Thin line \(0.5pt\):) Tj
+ET
+q
+0.8 g
+56.693 627.56935 481.894 0.5 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 607.0654 Td
+(Medium line \(2pt\):) Tj
+ET
+q
+0.8 g
+56.693 602.6654000000001 481.894 2 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 582.1614500000001 Td
+(Thick line \(5pt\):) Tj
+ET
+q
+0.8 g
+56.693 574.76145 481.894 5 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 548.5882 Td
+(Thick red line \(3pt\):) Tj
+ET
+q
+1 0 0 rg
+56.693 543.1882 481.894 3 re
+f
+Q
+0 g
+BT
+/F2 12 Tf
+56.693 522.68425 Td
+(Thick blue line \(4pt\):) Tj
+ET
+q
+0 0 1 rg
+56.693 516.28425 481.894 4 re
+f
+Q
+
+endstream
+endobj
+6 0 obj
+<< /Contents 5 0 R /MediaBox [0 0 595.28 841.89] /Parent 2 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [6 0 R] /Type /Pages >>
+endobj
+7 0 obj
+<< /Producer (gpdf) >>
+endobj
+1 0 obj
+<< /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000001515 00000 n 
+0000001420 00000 n 
+0000000009 00000 n 
+0000000084 00000 n 
+0000000154 00000 n 
+0000001278 00000 n 
+0000001477 00000 n 
+trailer
+<< /Info 7 0 R /Root 1 0 R /Size 8 >>
+startxref
+1564
+%%EOF

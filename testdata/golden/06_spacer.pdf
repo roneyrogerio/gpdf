@@ -1,0 +1,82 @@
+%PDF-1.7
+3 0 obj
+<< /BaseFont /Helvetica-Bold /Subtype /Type1 /Type /Font >>
+endobj
+4 0 obj
+<< /BaseFont /Helvetica /Subtype /Type1 /Type /Font >>
+endobj
+5 0 obj
+<< /Length 471 >>
+stream
+0 g
+BT
+/F1 18 Tf
+56.693 767.197 Td
+(Spacer Examples) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 751.597 Td
+(Text before 5mm spacer) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 723.02375 Td
+(Text after 5mm spacer) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 708.62375 Td
+(Text before 15mm spacer) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 651.704 Td
+(Text after 15mm spacer) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 637.3040000000001 Td
+(Text before 30mm spacer) Tj
+ET
+0 g
+BT
+/F2 12 Tf
+56.693 537.8645 Td
+(Text after 30mm spacer) Tj
+ET
+
+endstream
+endobj
+6 0 obj
+<< /Contents 5 0 R /MediaBox [0 0 595.28 841.89] /Parent 2 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [6 0 R] /Type /Pages >>
+endobj
+7 0 obj
+<< /Producer (gpdf) >>
+endobj
+1 0 obj
+<< /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000913 00000 n 
+0000000818 00000 n 
+0000000009 00000 n 
+0000000084 00000 n 
+0000000154 00000 n 
+0000000676 00000 n 
+0000000875 00000 n 
+trailer
+<< /Info 7 0 R /Root 1 0 R /Size 8 >>
+startxref
+962
+%%EOF
