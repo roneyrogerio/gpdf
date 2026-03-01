@@ -16,8 +16,15 @@
 - **12컬럼 그리드 시스템** — Bootstrap 스타일의 반응형 레이아웃
 - **TrueType 폰트 지원** — 커스텀 폰트 임베딩 및 서브셋팅
 - **CJK 지원** — 첫날부터 한중일 텍스트 완벽 지원
-- **테이블** — 헤더, 컬럼 너비, 줄무늬 행
-- **머리글 및 바닥글** — 모든 페이지에서 일관된 표시
+- **테이블** — 헤더, 컬럼 너비, 줄무늬 행, 수직 정렬
+- **머리글 및 바닥글** — 페이지 번호 포함, 모든 페이지에서 일관된 표시
+- **리스트** — 글머리 기호 목록 및 번호 목록
+- **QR 코드** — 순수 Go QR 코드 생성 (오류 정정 레벨 지원)
+- **바코드** — Code 128 바코드 생성
+- **텍스트 장식** — 밑줄, 취소선, 자간, 들여쓰기
+- **페이지 번호** — 자동 페이지 번호 및 전체 페이지 수
+- **Go 템플릿 통합** — Go 템플릿에서 PDF 생성
+- **JSON 스키마** — JSON으로만 문서 정의
 - **다양한 단위** — pt, mm, cm, in, em, %
 - **색상 공간** — RGB, 그레이스케일, CMYK
 - **이미지** — JPEG 및 PNG 임베딩 (맞춤 옵션 지원)
@@ -286,6 +293,12 @@ doc.Render(f)
 | `c.Text(text, opts...)` | 스타일 옵션을 포함한 텍스트 추가 |
 | `c.Table(header, rows, opts...)` | 테이블 추가 |
 | `c.Image(data, opts...)` | 이미지 추가 (JPEG/PNG) |
+| `c.QRCode(data, opts...)` | QR 코드 추가 |
+| `c.Barcode(data, opts...)` | 바코드 추가 (Code 128) |
+| `c.List(items, opts...)` | 글머리 기호 목록 추가 |
+| `c.OrderedList(items, opts...)` | 번호 목록 추가 |
+| `c.PageNumber(opts...)` | 현재 페이지 번호 추가 |
+| `c.TotalPages(opts...)` | 전체 페이지 수 추가 |
 | `c.Line(opts...)` | 수평선 추가 |
 | `c.Spacer(height)` | 수직 공간 추가 |
 
@@ -299,6 +312,10 @@ doc.Render(f)
 | `template.FontFamily(name)` | 등록된 폰트 사용 |
 | `template.TextColor(color)` | 텍스트 색상 설정 |
 | `template.BgColor(color)` | 배경 색상 설정 |
+| `template.Underline()` | 밑줄 장식 |
+| `template.Strikethrough()` | 취소선 장식 |
+| `template.LetterSpacing(pts)` | 자간 설정 (포인트) |
+| `template.TextIndent(value)` | 첫줄 들여쓰기 설정 |
 | `template.AlignLeft()` | 왼쪽 정렬 (기본값) |
 | `template.AlignCenter()` | 가운데 정렬 |
 | `template.AlignRight()` | 오른쪽 정렬 |
@@ -310,6 +327,7 @@ doc.Render(f)
 | `template.ColumnWidths(w...)` | 컬럼 너비를 백분율로 설정 |
 | `template.TableHeaderStyle(opts...)` | 헤더 행 스타일 설정 |
 | `template.TableStripe(color)` | 교차 행 색상 설정 |
+| `template.TableCellVAlign(align)` | 셀 수직 정렬 (Top/Middle/Bottom) |
 
 ### 이미지 옵션
 
@@ -317,6 +335,30 @@ doc.Render(f)
 |---|---|
 | `template.FitWidth(value)` | 너비에 맞춰 스케일 (비율 유지) |
 | `template.FitHeight(value)` | 높이에 맞춰 스케일 (비율 유지) |
+
+### QR 코드 옵션
+
+| 옵션 | 설명 |
+|---|---|
+| `template.QRSize(value)` | QR 코드 크기 설정 |
+| `template.QRErrorCorrection(level)` | 오류 정정 레벨 설정 (L/M/Q/H) |
+| `template.QRScale(n)` | 모듈 스케일 팩터 설정 |
+
+### 바코드 옵션
+
+| 옵션 | 설명 |
+|---|---|
+| `template.BarcodeWidth(value)` | 바코드 너비 설정 |
+| `template.BarcodeHeight(value)` | 바코드 높이 설정 |
+| `template.BarcodeFormat(fmt)` | 바코드 형식 설정 (Code 128) |
+
+### 템플릿 생성
+
+| 함수 | 설명 |
+|---|---|
+| `template.FromJSON(schema, data)` | JSON 스키마에서 문서 생성 |
+| `template.FromTemplate(tmpl, data)` | Go 템플릿에서 문서 생성 |
+| `template.TemplateFuncMap()` | 템플릿 헬퍼 함수 가져오기 (`toJSON` 포함) |
 
 ### 선 옵션
 
