@@ -26,6 +26,7 @@ _example/main
 
 # Test output
 _output/
+examples/_output/
 
 # Docs
 docs/

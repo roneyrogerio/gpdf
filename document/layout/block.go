@@ -493,12 +493,17 @@ func stretchPlacedNodes(nodes []PlacedNode, targetHeight float64) {
 // stretchLastChild recursively stretches the last child in a chain so
 // that its height fills the remaining space. This ensures backgrounds
 // on leaf content nodes (e.g. Text) extend to the bottom of their
-// containing row cell.
+// containing row cell. Image nodes are never stretched so that their
+// aspect ratio is preserved.
 func stretchLastChild(children []PlacedNode, parentHeight float64) {
 	if len(children) == 0 {
 		return
 	}
 	last := &children[len(children)-1]
+	// Do not stretch image nodes — they have intrinsic aspect ratios.
+	if last.Node != nil && last.Node.NodeType() == document.NodeImage {
+		return
+	}
 	remaining := parentHeight - last.Position.Y
 	if remaining > last.Size.Height {
 		last.Size.Height = remaining

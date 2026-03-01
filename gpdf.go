@@ -53,3 +53,23 @@ var (
 	Letter = document.Letter
 	Legal  = document.Legal
 )
+
+// Re-export QR code option functions for convenience.
+var (
+	// QRSize sets the display size of a QR code (width = height).
+	QRSize = template.QRSize
+	// QRErrorCorrection sets the QR error correction level.
+	QRErrorCorrection = template.QRErrorCorrection
+	// QRScale sets the pixels per QR module.
+	QRScale = template.QRScale
+)
+
+// Re-export barcode option functions for convenience.
+var (
+	// BarcodeWidth sets the display width of a barcode.
+	BarcodeWidth = template.BarcodeWidth
+	// BarcodeHeight sets the display height of a barcode.
+	BarcodeHeight = template.BarcodeHeight
+	// BarcodeFormat sets the barcode symbology.
+	BarcodeFormat = template.BarcodeFormat
+)

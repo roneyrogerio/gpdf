@@ -1,8 +1,10 @@
 package template
 
 import (
+	"github.com/gpdf-dev/gpdf/barcode"
 	"github.com/gpdf-dev/gpdf/document"
 	"github.com/gpdf-dev/gpdf/pdf"
+	"github.com/gpdf-dev/gpdf/qrcode"
 )
 
 // --- Text Options ---
@@ -189,5 +191,69 @@ func LineColor(c pdf.Color) LineOption {
 func LineThickness(v document.Value) LineOption {
 	return func(cfg *lineConfig) {
 		cfg.thickness = v
+	}
+}
+
+// --- QR Code Options ---
+
+// QRCodeOption configures a QR code element.
+type QRCodeOption func(*qrCodeConfig)
+
+type qrCodeConfig struct {
+	size    document.Value
+	ecLevel qrcode.ErrorCorrectionLevel
+	scale   int
+}
+
+// QRSize sets the display size (width = height) of the QR code.
+func QRSize(v document.Value) QRCodeOption {
+	return func(cfg *qrCodeConfig) {
+		cfg.size = v
+	}
+}
+
+// QRErrorCorrection sets the error correction level (L/M/Q/H).
+func QRErrorCorrection(level qrcode.ErrorCorrectionLevel) QRCodeOption {
+	return func(cfg *qrCodeConfig) {
+		cfg.ecLevel = level
+	}
+}
+
+// QRScale sets the number of pixels per QR module.
+func QRScale(s int) QRCodeOption {
+	return func(cfg *qrCodeConfig) {
+		cfg.scale = s
+	}
+}
+
+// --- Barcode Options ---
+
+// BarcodeOption configures a barcode element.
+type BarcodeOption func(*barcodeConfig)
+
+type barcodeConfig struct {
+	width  document.Value
+	height document.Value
+	format barcode.Format
+}
+
+// BarcodeWidth sets the display width of the barcode.
+func BarcodeWidth(v document.Value) BarcodeOption {
+	return func(cfg *barcodeConfig) {
+		cfg.width = v
+	}
+}
+
+// BarcodeHeight sets the display height of the barcode.
+func BarcodeHeight(v document.Value) BarcodeOption {
+	return func(cfg *barcodeConfig) {
+		cfg.height = v
+	}
+}
+
+// BarcodeFormat sets the barcode symbology.
+func BarcodeFormat(f barcode.Format) BarcodeOption {
+	return func(cfg *barcodeConfig) {
+		cfg.format = f
 	}
 }

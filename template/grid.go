@@ -1,8 +1,10 @@
 package template
 
 import (
+	"github.com/gpdf-dev/gpdf/barcode"
 	"github.com/gpdf-dev/gpdf/document"
 	"github.com/gpdf-dev/gpdf/pdf"
+	"github.com/gpdf-dev/gpdf/qrcode"
 )
 
 // gridColumns is the total number of columns in the grid system.
@@ -305,6 +307,89 @@ func (c *ColBuilder) RichText(fn func(rt *RichTextBuilder), opts ...TextOption) 
 		Fragments:  rtb.fragments,
 		BlockStyle: blockStyle,
 	})
+}
+
+// QRCode adds a QR code image to the column.
+// The data is encoded as a QR code and rendered as a PNG image.
+func (c *ColBuilder) QRCode(data string, opts ...QRCodeOption) {
+	cfg := qrCodeConfig{
+		ecLevel: qrcode.LevelM,
+		scale:   10,
+	}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	qr, err := qrcode.Encode(data, cfg.ecLevel)
+	if err != nil {
+		return // silently skip on error, consistent with other builder methods
+	}
+
+	pngData, err := qr.PNG(cfg.scale)
+	if err != nil {
+		return
+	}
+
+	w, h := extractImageDimensions(pngData, document.ImagePNG)
+
+	imgNode := &document.Image{
+		Source: document.ImageSource{
+			Data:   pngData,
+			Format: document.ImagePNG,
+			Width:  w,
+			Height: h,
+		},
+		FitMode: document.FitContain,
+	}
+
+	if cfg.size.Amount > 0 {
+		imgNode.DisplayWidth = cfg.size
+		imgNode.DisplayHeight = cfg.size
+	}
+
+	c.nodes = append(c.nodes, imgNode)
+}
+
+// Barcode adds a barcode image to the column.
+// The data is encoded as a barcode and rendered as a PNG image.
+func (c *ColBuilder) Barcode(data string, opts ...BarcodeOption) {
+	cfg := barcodeConfig{
+		format: barcode.Code128,
+	}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	bc, err := barcode.Encode(data, cfg.format)
+	if err != nil {
+		return
+	}
+
+	pngData, err := bc.PNG(2, 100)
+	if err != nil {
+		return
+	}
+
+	w, h := extractImageDimensions(pngData, document.ImagePNG)
+
+	imgNode := &document.Image{
+		Source: document.ImageSource{
+			Data:   pngData,
+			Format: document.ImagePNG,
+			Width:  w,
+			Height: h,
+		},
+		FitMode: document.FitContain,
+	}
+
+	if cfg.width.Amount > 0 {
+		imgNode.DisplayWidth = cfg.width
+	}
+	if cfg.height.Amount > 0 {
+		imgNode.DisplayHeight = cfg.height
+	}
+
+	c.nodes = append(c.nodes, imgNode)
 }
 
 // Spacer adds vertical space.
