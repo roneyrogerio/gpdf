@@ -32,6 +32,42 @@ A pure Go, zero-dependency PDF generation library with a layered architecture an
 - **Images** — JPEG and PNG embedding with fit options
 - **Document metadata** — title, author, subject, creator
 
+## Benchmark
+
+Comparison with [go-pdf/fpdf](https://github.com/go-pdf/fpdf), [signintech/gopdf](https://github.com/signintech/gopdf), and [maroto v2](https://github.com/johnfercher/maroto).
+Median of 5 runs, 100 iterations each. Apple M1, Go 1.25.
+
+**Execution time** (lower is better):
+
+| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| Single page | **13 µs** | 132 µs | 423 µs | 237 µs |
+| Table (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
+| 100 pages | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
+| Complex document | **133 µs** | 254 µs | 997 µs | 10.4 ms |
+
+**Memory usage** (lower is better):
+
+| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| Single page | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
+| Table (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
+| 100 pages | **909 KB** | 121 MB | 83 MB | 4.0 MB |
+| Complex document | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
+
+### Why is gpdf fast?
+
+- **Single page** — Single-pass build→layout→render pipeline with no intermediate data structures. Concrete struct types throughout (no `interface{}` boxing), so the document tree is built with minimal heap allocations.
+- **Table** — Cell content is written directly as PDF content stream commands via a reusable `strings.Builder` buffer. No per-cell object wrapping or repeated font lookups; the font is resolved once per document.
+- **100 pages** — Layout scales linearly O(n). Overflow pagination passes remaining nodes by slice reference (no deep copies). The font is parsed once and shared across all pages.
+- **Complex document** — Single-pass layout without re-measurement combines all the above. Font subsetting embeds only the glyphs actually used, and Flate compression is applied by default, keeping both memory and output size small.
+
+Run benchmarks yourself:
+
+```bash
+cd _benchmark && go test -bench=. -benchmem -count=5
+```
+
 ## Architecture
 
 ```
@@ -663,42 +699,6 @@ pdf.CMYK(0, 0.5, 1, 0)   // CMYK
 // Predefined
 pdf.Black, pdf.White, pdf.Red, pdf.Green, pdf.Blue
 pdf.Yellow, pdf.Cyan, pdf.Magenta
-```
-
-## Benchmark
-
-Comparison with [go-pdf/fpdf](https://github.com/go-pdf/fpdf), [signintech/gopdf](https://github.com/signintech/gopdf), and [maroto v2](https://github.com/johnfercher/maroto).
-Median of 5 runs, 100 iterations each. Apple M1, Go 1.25.
-
-**Execution time** (lower is better):
-
-| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
-|---|--:|--:|--:|--:|
-| Single page | **13 µs** | 132 µs | 423 µs | 237 µs |
-| Table (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
-| 100 pages | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
-| Complex document | **133 µs** | 254 µs | 997 µs | 10.4 ms |
-
-**Memory usage** (lower is better):
-
-| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
-|---|--:|--:|--:|--:|
-| Single page | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
-| Table (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
-| 100 pages | **909 KB** | 121 MB | 83 MB | 4.0 MB |
-| Complex document | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
-
-### Why is gpdf fast?
-
-- **Single page** — Single-pass build→layout→render pipeline with no intermediate data structures. Concrete struct types throughout (no `interface{}` boxing), so the document tree is built with minimal heap allocations.
-- **Table** — Cell content is written directly as PDF content stream commands via a reusable `strings.Builder` buffer. No per-cell object wrapping or repeated font lookups; the font is resolved once per document.
-- **100 pages** — Layout scales linearly O(n). Overflow pagination passes remaining nodes by slice reference (no deep copies). The font is parsed once and shared across all pages.
-- **Complex document** — Single-pass layout without re-measurement combines all the above. Font subsetting embeds only the glyphs actually used, and Flate compression is applied by default, keeping both memory and output size small.
-
-Run benchmarks yourself:
-
-```bash
-cd _benchmark && go test -bench=. -benchmem -count=5
 ```
 
 ## License

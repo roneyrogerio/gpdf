@@ -31,6 +31,42 @@ Biblioteca de geração de PDF em Go puro, sem dependências externas, com arqui
 - **Imagens** — incorporação de JPEG e PNG com opções de ajuste
 - **Metadados do documento** — título, autor, assunto, criador
 
+## Benchmark
+
+Comparação com [go-pdf/fpdf](https://github.com/go-pdf/fpdf), [signintech/gopdf](https://github.com/signintech/gopdf) e [maroto v2](https://github.com/johnfercher/maroto).
+Mediana de 5 execuções, 100 iterações cada. Apple M1, Go 1.25.
+
+**Tempo de execução** (menor é melhor):
+
+| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| Página única | **13 µs** | 132 µs | 423 µs | 237 µs |
+| Tabela (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
+| 100 páginas | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
+| Documento complexo | **133 µs** | 254 µs | 997 µs | 10.4 ms |
+
+**Uso de memória** (menor é melhor):
+
+| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| Página única | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
+| Tabela (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
+| 100 páginas | **909 KB** | 121 MB | 83 MB | 4.0 MB |
+| Documento complexo | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
+
+### Por que o gpdf é rápido?
+
+- **Página única** — Pipeline de passagem única: construir→compor→renderizar, sem estruturas de dados intermediárias. Usa tipos struct concretos (sem boxing de `interface{}`), construindo a árvore do documento com alocações de heap mínimas.
+- **Tabela** — O conteúdo das células é escrito diretamente como comandos de fluxo de conteúdo PDF através de um buffer `strings.Builder` reutilizável. Sem encapsulamento de objetos por célula ou buscas de fontes repetidas; a fonte é resolvida uma vez por documento.
+- **100 páginas** — O layout escala linearmente O(n). A paginação por overflow passa os nós restantes por referência de slice (sem cópias profundas). A fonte é parseada uma vez e compartilhada entre todas as páginas.
+- **Documento complexo** — O layout de passagem única sem re-medição combina todas as vantagens acima. O subsetting de fontes incorpora apenas os glifos utilizados, e a compressão Flate é aplicada por padrão, mantendo pequenos tanto a memória quanto o tamanho de saída.
+
+Executar benchmarks:
+
+```bash
+cd _benchmark && go test -bench=. -benchmem -count=5
+```
+
 ## Arquitetura
 
 ```
@@ -455,42 +491,6 @@ pdf.CMYK(0, 0.5, 1, 0)   // CMYK
 // Cores predefinidas
 pdf.Black, pdf.White, pdf.Red, pdf.Green, pdf.Blue
 pdf.Yellow, pdf.Cyan, pdf.Magenta
-```
-
-## Benchmark
-
-Comparação com [go-pdf/fpdf](https://github.com/go-pdf/fpdf), [signintech/gopdf](https://github.com/signintech/gopdf) e [maroto v2](https://github.com/johnfercher/maroto).
-Mediana de 5 execuções, 100 iterações cada. Apple M1, Go 1.25.
-
-**Tempo de execução** (menor é melhor):
-
-| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
-|---|--:|--:|--:|--:|
-| Página única | **13 µs** | 132 µs | 423 µs | 237 µs |
-| Tabela (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
-| 100 páginas | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
-| Documento complexo | **133 µs** | 254 µs | 997 µs | 10.4 ms |
-
-**Uso de memória** (menor é melhor):
-
-| Benchmark | gpdf | fpdf | gopdf | maroto v2 |
-|---|--:|--:|--:|--:|
-| Página única | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
-| Tabela (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
-| 100 páginas | **909 KB** | 121 MB | 83 MB | 4.0 MB |
-| Documento complexo | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
-
-### Por que o gpdf é rápido?
-
-- **Página única** — Pipeline de passagem única: construir→compor→renderizar, sem estruturas de dados intermediárias. Usa tipos struct concretos (sem boxing de `interface{}`), construindo a árvore do documento com alocações de heap mínimas.
-- **Tabela** — O conteúdo das células é escrito diretamente como comandos de fluxo de conteúdo PDF através de um buffer `strings.Builder` reutilizável. Sem encapsulamento de objetos por célula ou buscas de fontes repetidas; a fonte é resolvida uma vez por documento.
-- **100 páginas** — O layout escala linearmente O(n). A paginação por overflow passa os nós restantes por referência de slice (sem cópias profundas). A fonte é parseada uma vez e compartilhada entre todas as páginas.
-- **Documento complexo** — O layout de passagem única sem re-medição combina todas as vantagens acima. O subsetting de fontes incorpora apenas os glifos utilizados, e a compressão Flate é aplicada por padrão, mantendo pequenos tanto a memória quanto o tamanho de saída.
-
-Executar benchmarks:
-
-```bash
-cd _benchmark && go test -bench=. -benchmem -count=5
 ```
 
 ## Licença

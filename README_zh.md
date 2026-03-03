@@ -31,6 +31,42 @@
 - **图片** — JPEG 和 PNG 嵌入（支持缩放选项）
 - **文档元数据** — 标题、作者、主题、创建者
 
+## 基准测试
+
+与 [go-pdf/fpdf](https://github.com/go-pdf/fpdf)、[signintech/gopdf](https://github.com/signintech/gopdf)、[maroto v2](https://github.com/johnfercher/maroto) 对比。
+5次运行取中位数，每次100次迭代。Apple M1，Go 1.25。
+
+**执行时间**（越低越好）:
+
+| 基准测试 | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| 单页 | **13 µs** | 132 µs | 423 µs | 237 µs |
+| 表格 (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
+| 100页 | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
+| 复杂文档 | **133 µs** | 254 µs | 997 µs | 10.4 ms |
+
+**内存使用**（越低越好）:
+
+| 基准测试 | gpdf | fpdf | gopdf | maroto v2 |
+|---|--:|--:|--:|--:|
+| 单页 | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
+| 表格 (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
+| 100页 | **909 KB** | 121 MB | 83 MB | 4.0 MB |
+| 复杂文档 | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
+
+### 为什么 gpdf 更快？
+
+- **单页** — 构建→布局→渲染的单次管道，无中间数据结构。全程使用具体结构体类型（无 `interface{}` 装箱），以最少的堆分配构建文档树。
+- **表格** — 单元格内容通过可复用的 `strings.Builder` 缓冲区直接写入 PDF 内容流命令。无逐单元格的对象包装或重复字体查找，字体在每个文档中仅解析一次。
+- **100页** — 布局以 O(n) 线性扩展。溢出分页通过切片引用传递剩余节点（无深拷贝）。字体仅解析一次并在所有页面间共享。
+- **复杂文档** — 无需重新测量的单次布局整合了以上所有优势。字体子集化仅嵌入实际使用的字形，且默认启用 Flate 压缩，使内存和输出大小保持较小。
+
+运行基准测试:
+
+```bash
+cd _benchmark && go test -bench=. -benchmem -count=5
+```
+
 ## 架构
 
 ```
@@ -463,42 +499,6 @@ pdf.CMYK(0, 0.5, 1, 0)   // CMYK
 // 预定义颜色
 pdf.Black, pdf.White, pdf.Red, pdf.Green, pdf.Blue
 pdf.Yellow, pdf.Cyan, pdf.Magenta
-```
-
-## 基准测试
-
-与 [go-pdf/fpdf](https://github.com/go-pdf/fpdf)、[signintech/gopdf](https://github.com/signintech/gopdf)、[maroto v2](https://github.com/johnfercher/maroto) 对比。
-5次运行取中位数，每次100次迭代。Apple M1，Go 1.25。
-
-**执行时间**（越低越好）:
-
-| 基准测试 | gpdf | fpdf | gopdf | maroto v2 |
-|---|--:|--:|--:|--:|
-| 单页 | **13 µs** | 132 µs | 423 µs | 237 µs |
-| 表格 (4x10) | **108 µs** | 241 µs | 835 µs | 8.6 ms |
-| 100页 | **683 µs** | 11.7 ms | 8.6 ms | 19.8 ms |
-| 复杂文档 | **133 µs** | 254 µs | 997 µs | 10.4 ms |
-
-**内存使用**（越低越好）:
-
-| 基准测试 | gpdf | fpdf | gopdf | maroto v2 |
-|---|--:|--:|--:|--:|
-| 单页 | **16 KB** | 1.2 MB | 1.8 MB | 61 KB |
-| 表格 (4x10) | **209 KB** | 1.3 MB | 1.9 MB | 1.6 MB |
-| 100页 | **909 KB** | 121 MB | 83 MB | 4.0 MB |
-| 复杂文档 | **246 KB** | 1.3 MB | 2.0 MB | 2.0 MB |
-
-### 为什么 gpdf 更快？
-
-- **单页** — 构建→布局→渲染的单次管道，无中间数据结构。全程使用具体结构体类型（无 `interface{}` 装箱），以最少的堆分配构建文档树。
-- **表格** — 单元格内容通过可复用的 `strings.Builder` 缓冲区直接写入 PDF 内容流命令。无逐单元格的对象包装或重复字体查找，字体在每个文档中仅解析一次。
-- **100页** — 布局以 O(n) 线性扩展。溢出分页通过切片引用传递剩余节点（无深拷贝）。字体仅解析一次并在所有页面间共享。
-- **复杂文档** — 无需重新测量的单次布局整合了以上所有优势。字体子集化仅嵌入实际使用的字形，且默认启用 Flate 压缩，使内存和输出大小保持较小。
-
-运行基准测试:
-
-```bash
-cd _benchmark && go test -bench=. -benchmem -count=5
 ```
 
 ## 许可证
