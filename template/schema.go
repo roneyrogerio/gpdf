@@ -3,12 +3,14 @@ package template
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/gpdf-dev/gpdf/barcode"
 	"github.com/gpdf-dev/gpdf/document"
 	"github.com/gpdf-dev/gpdf/pdf"
+	"github.com/gpdf-dev/gpdf/qrcode"
 )
 
 // ---------------------------------------------------------------------------
@@ -30,11 +32,17 @@ import (
 //	  ]
 //	}
 type Schema struct {
-	Page     SchemaPage  `json:"page"`
-	Metadata *SchemaMeta `json:"metadata,omitempty"`
-	Header   []SchemaRow `json:"header,omitempty"`
-	Footer   []SchemaRow `json:"footer,omitempty"`
-	Body     []SchemaRow `json:"body"`
+	Page     SchemaPage       `json:"page"`
+	Metadata *SchemaMeta      `json:"metadata,omitempty"`
+	Header   []SchemaRow      `json:"header,omitempty"`
+	Footer   []SchemaRow      `json:"footer,omitempty"`
+	Body     []SchemaRow      `json:"body,omitempty"`
+	Pages    []SchemaPageBody `json:"pages,omitempty"` // multiple explicit pages
+}
+
+// SchemaPageBody defines the body content for a single page.
+type SchemaPageBody struct {
+	Body []SchemaRow `json:"body"`
 }
 
 // SchemaPage defines page-level settings.
@@ -116,9 +124,11 @@ type SchemaStyle struct {
 
 // SchemaImage defines an image element.
 type SchemaImage struct {
-	Src    string `json:"src"`              // base64 or data URI
+	Src    string `json:"src"`              // base64, data URI, or file path
 	Width  string `json:"width,omitempty"`  // dimension
 	Height string `json:"height,omitempty"` // dimension
+	Fit    string `json:"fit,omitempty"`    // "contain"|"cover"|"stretch"|"original"
+	Align  string `json:"align,omitempty"`  // "left"|"center"|"right"
 }
 
 // SchemaTable defines a table element.
@@ -144,8 +154,9 @@ type SchemaLine struct {
 
 // SchemaQRCode defines a QR code element.
 type SchemaQRCode struct {
-	Data string `json:"data"`
-	Size string `json:"size,omitempty"`
+	Data            string `json:"data"`
+	Size            string `json:"size,omitempty"`
+	ErrorCorrection string `json:"errorCorrection,omitempty"` // "L", "M", "Q", "H"
 }
 
 // SchemaBarcode defines a barcode element.
@@ -217,32 +228,44 @@ func parsePageSize(s string) (document.Size, error) {
 	}
 }
 
+// namedColors maps color name strings to their pdf.Color values.
+var namedColors = map[string]pdf.Color{
+	"black":   pdf.Black,
+	"white":   pdf.White,
+	"red":     pdf.Red,
+	"green":   pdf.Green,
+	"blue":    pdf.Blue,
+	"yellow":  pdf.Yellow,
+	"cyan":    pdf.Cyan,
+	"magenta": pdf.Magenta,
+}
+
 // parseColor parses a color string into pdf.Color.
-// Supported formats: "#RRGGBB" hex, or named colors (black, white, red,
-// green, blue, yellow, cyan, magenta).
+// Supported formats: "#RRGGBB" hex, "rgb(r,g,b)", "gray(v)", or named colors.
 func parseColor(s string) (pdf.Color, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return pdf.Black, nil
 	}
 
-	switch strings.ToLower(s) {
-	case "black":
-		return pdf.Black, nil
-	case "white":
-		return pdf.White, nil
-	case "red":
-		return pdf.Red, nil
-	case "green":
-		return pdf.Green, nil
-	case "blue":
-		return pdf.Blue, nil
-	case "yellow":
-		return pdf.Yellow, nil
-	case "cyan":
-		return pdf.Cyan, nil
-	case "magenta":
-		return pdf.Magenta, nil
+	lower := strings.ToLower(s)
+	if c, ok := namedColors[lower]; ok {
+		return c, nil
+	}
+
+	// gray(N) format: grayscale color.
+	if strings.HasPrefix(lower, "gray(") && strings.HasSuffix(lower, ")") {
+		valStr := lower[5 : len(lower)-1]
+		val, err := strconv.ParseFloat(valStr, 64)
+		if err != nil {
+			return pdf.Color{}, fmt.Errorf("invalid gray color %q: %w", s, err)
+		}
+		return pdf.Gray(val), nil
+	}
+
+	// rgb(r, g, b) format: float RGB color (0.0-1.0).
+	if strings.HasPrefix(lower, "rgb(") && strings.HasSuffix(lower, ")") {
+		return parseRGBColor(s, lower)
 	}
 
 	// Hex color: #RRGGBB.
@@ -255,6 +278,28 @@ func parseColor(s string) (pdf.Color, error) {
 	}
 
 	return pdf.Color{}, fmt.Errorf("unknown color: %q", s)
+}
+
+// parseRGBColor parses an "rgb(r, g, b)" color string with float components (0.0-1.0).
+func parseRGBColor(original, lower string) (pdf.Color, error) {
+	inner := lower[4 : len(lower)-1]
+	parts := strings.Split(inner, ",")
+	if len(parts) != 3 {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: expected 3 components", original)
+	}
+	r, err := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+	if err != nil {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", original, err)
+	}
+	g, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+	if err != nil {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", original, err)
+	}
+	b, err := strconv.ParseFloat(strings.TrimSpace(parts[2]), 64)
+	if err != nil {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", original, err)
+	}
+	return pdf.RGB(r, g, b), nil
 }
 
 // parseAlignOption converts an alignment string to a TextOption.
@@ -325,6 +370,51 @@ func decodeBase64Image(s string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(s)
 }
 
+// loadImageData resolves the image source string to raw image bytes.
+// It supports data URIs, file:// URIs, file paths, and raw base64 strings.
+func loadImageData(src string) ([]byte, error) {
+	// data URI
+	if strings.HasPrefix(src, "data:") {
+		return decodeBase64Image(src)
+	}
+	// file URI
+	if strings.HasPrefix(src, "file://") {
+		return os.ReadFile(strings.TrimPrefix(src, "file://"))
+	}
+	// relative file path (unambiguous)
+	if strings.HasPrefix(src, "./") || strings.HasPrefix(src, "../") {
+		return os.ReadFile(src)
+	}
+	// Windows drive letter (e.g., "C:\...")
+	if len(src) >= 3 && src[1] == ':' && (src[2] == '/' || src[2] == '\\') {
+		return os.ReadFile(src)
+	}
+	// For absolute paths starting with /, try file first, then base64.
+	// This handles JPEG base64 strings that start with "/9j/...".
+	if strings.HasPrefix(src, "/") {
+		if data, err := os.ReadFile(src); err == nil {
+			return data, nil
+		}
+		// Not a valid file path, try base64.
+		return decodeBase64Image(src)
+	}
+	// fallback: raw base64
+	return decodeBase64Image(src)
+}
+
+// isFilePath returns true if the string looks like a file system path
+// rather than a base64-encoded string.
+func isFilePath(s string) bool {
+	if strings.HasPrefix(s, "/") || strings.HasPrefix(s, "./") || strings.HasPrefix(s, "../") {
+		return true
+	}
+	// Windows drive letter (e.g., "C:\...")
+	if len(s) >= 3 && s[1] == ':' && (s[2] == '/' || s[2] == '\\') {
+		return true
+	}
+	return false
+}
+
 // ---------------------------------------------------------------------------
 // Schema → Document builder
 // ---------------------------------------------------------------------------
@@ -380,6 +470,11 @@ func buildFromSchema(schema *Schema, opts []Option) (*Document, error) {
 	if len(schema.Body) > 0 {
 		page := doc.AddPage()
 		buildSchemaRows(page, schema.Body)
+	}
+
+	for _, p := range schema.Pages {
+		page := doc.AddPage()
+		buildSchemaRows(page, p.Body)
 	}
 
 	return doc, nil
@@ -492,7 +587,7 @@ func buildSchemaImage(c *ColBuilder, img *SchemaImage) {
 	if img == nil {
 		return
 	}
-	data, err := decodeBase64Image(img.Src)
+	data, err := loadImageData(img.Src)
 	if err != nil {
 		return // silently skip, consistent with builder API pattern
 	}
@@ -507,7 +602,47 @@ func buildSchemaImage(c *ColBuilder, img *SchemaImage) {
 			opts = append(opts, FitHeight(v))
 		}
 	}
+	if img.Fit != "" {
+		if mode, ok := parseFitMode(img.Fit); ok {
+			opts = append(opts, WithFitMode(mode))
+		}
+	}
+	if img.Align != "" {
+		if align, ok := parseImageAlign(img.Align); ok {
+			opts = append(opts, WithAlign(align))
+		}
+	}
 	c.Image(data, opts...)
+}
+
+// parseFitMode converts a fit mode string to an ImageFitMode constant.
+func parseFitMode(s string) (document.ImageFitMode, bool) {
+	switch strings.ToLower(s) {
+	case "contain":
+		return document.FitContain, true
+	case "cover":
+		return document.FitCover, true
+	case "stretch":
+		return document.FitStretch, true
+	case "original":
+		return document.FitOriginal, true
+	default:
+		return document.FitContain, false
+	}
+}
+
+// parseImageAlign converts an alignment string to a TextAlign constant.
+func parseImageAlign(s string) (document.TextAlign, bool) {
+	switch strings.ToLower(s) {
+	case "left":
+		return document.AlignLeft, true
+	case "center":
+		return document.AlignCenter, true
+	case "right":
+		return document.AlignRight, true
+	default:
+		return document.AlignLeft, false
+	}
 }
 
 func buildSchemaTable(c *ColBuilder, tbl *SchemaTable) {
@@ -570,7 +705,28 @@ func buildSchemaQRCode(c *ColBuilder, qr *SchemaQRCode) {
 			opts = append(opts, QRSize(v))
 		}
 	}
+	if qr.ErrorCorrection != "" {
+		if level, ok := parseQRErrorCorrection(qr.ErrorCorrection); ok {
+			opts = append(opts, QRErrorCorrection(level))
+		}
+	}
 	c.QRCode(qr.Data, opts...)
+}
+
+// parseQRErrorCorrection converts an error correction string to a qrcode level.
+func parseQRErrorCorrection(s string) (qrcode.ErrorCorrectionLevel, bool) {
+	switch strings.ToUpper(strings.TrimSpace(s)) {
+	case "L":
+		return qrcode.LevelL, true
+	case "M":
+		return qrcode.LevelM, true
+	case "Q":
+		return qrcode.LevelQ, true
+	case "H":
+		return qrcode.LevelH, true
+	default:
+		return qrcode.LevelM, false
+	}
 }
 
 func buildSchemaBarcode(c *ColBuilder, bc *SchemaBarcode) {

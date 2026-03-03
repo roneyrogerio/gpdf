@@ -383,7 +383,7 @@ func (bl *BlockLayout) layoutChild(child document.DocumentNode, constraints Cons
 }
 
 // layoutImage computes the display dimensions for an image node,
-// respecting explicit size constraints and preserving aspect ratio.
+// respecting explicit size constraints, fit mode, and aspect ratio.
 func (bl *BlockLayout) layoutImage(child document.DocumentNode, constraints Constraints) Result {
 	img, ok := child.(*document.Image)
 	if !ok {
@@ -399,41 +399,35 @@ func (bl *BlockLayout) layoutImage(child document.DocumentNode, constraints Cons
 
 	aspectRatio := intrinsicW / intrinsicH
 
-	hasExplicitW := img.DisplayWidth.Unit != document.UnitAuto && img.DisplayWidth.Amount > 0
-	hasExplicitH := img.DisplayHeight.Unit != document.UnitAuto && img.DisplayHeight.Amount > 0
-
 	var displayW, displayH float64
-	const defaultFontSize = 12.0
 
-	switch {
-	case hasExplicitW && hasExplicitH:
-		displayW = img.DisplayWidth.Resolve(constraints.AvailableWidth, defaultFontSize)
-		displayH = img.DisplayHeight.Resolve(constraints.AvailableHeight, defaultFontSize)
-	case hasExplicitW:
-		displayW = img.DisplayWidth.Resolve(constraints.AvailableWidth, defaultFontSize)
-		displayH = displayW / aspectRatio
-	case hasExplicitH:
-		displayH = img.DisplayHeight.Resolve(constraints.AvailableHeight, defaultFontSize)
-		displayW = displayH * aspectRatio
-	default:
-		// Use intrinsic dimensions, scaled to fit available width.
+	switch img.FitMode {
+	case document.FitOriginal:
 		displayW = intrinsicW
 		displayH = intrinsicH
-		if displayW > constraints.AvailableWidth {
+	case document.FitStretch:
+		if w, h, ok := resolveExplicitDimensions(img, constraints, aspectRatio); ok {
+			displayW, displayH = w, h
+		} else {
 			displayW = constraints.AvailableWidth
 			displayH = displayW / aspectRatio
 		}
+	case document.FitCover:
+		displayW, displayH = computeCoverSize(img, constraints, intrinsicW, intrinsicH)
+	default: // FitContain
+		if w, h, ok := resolveExplicitDimensions(img, constraints, aspectRatio); ok {
+			displayW, displayH = w, h
+		} else {
+			displayW = intrinsicW
+			displayH = intrinsicH
+			if displayW > constraints.AvailableWidth {
+				displayW = constraints.AvailableWidth
+				displayH = displayW / aspectRatio
+			}
+		}
 	}
 
-	// Clamp to available space.
-	if displayW > constraints.AvailableWidth {
-		displayW = constraints.AvailableWidth
-		displayH = displayW / aspectRatio
-	}
-	if displayH > constraints.AvailableHeight {
-		displayH = constraints.AvailableHeight
-		displayW = displayH * aspectRatio
-	}
+	displayW, displayH = clampImageSize(img.FitMode, displayW, displayH, aspectRatio, constraints)
 
 	return Result{
 		Bounds: document.Rectangle{
@@ -441,6 +435,71 @@ func (bl *BlockLayout) layoutImage(child document.DocumentNode, constraints Cons
 			Height: displayH,
 		},
 	}
+}
+
+// resolveExplicitDimensions resolves display dimensions from explicit
+// width/height settings. Returns (0, 0, false) when no explicit dimensions are set.
+func resolveExplicitDimensions(img *document.Image, constraints Constraints, aspectRatio float64) (float64, float64, bool) {
+	const defaultFontSize = 12.0
+	hasW := img.DisplayWidth.Unit != document.UnitAuto && img.DisplayWidth.Amount > 0
+	hasH := img.DisplayHeight.Unit != document.UnitAuto && img.DisplayHeight.Amount > 0
+
+	switch {
+	case hasW && hasH:
+		return img.DisplayWidth.Resolve(constraints.AvailableWidth, defaultFontSize),
+			img.DisplayHeight.Resolve(constraints.AvailableHeight, defaultFontSize), true
+	case hasW:
+		w := img.DisplayWidth.Resolve(constraints.AvailableWidth, defaultFontSize)
+		return w, w / aspectRatio, true
+	case hasH:
+		h := img.DisplayHeight.Resolve(constraints.AvailableHeight, defaultFontSize)
+		return h * aspectRatio, h, true
+	default:
+		return 0, 0, false
+	}
+}
+
+// computeCoverSize calculates dimensions for FitCover mode, scaling to
+// cover the bounds completely.
+func computeCoverSize(img *document.Image, constraints Constraints, intrinsicW, intrinsicH float64) (float64, float64) {
+	const defaultFontSize = 12.0
+	boundsW := constraints.AvailableWidth
+	boundsH := constraints.AvailableHeight
+	if img.DisplayWidth.Unit != document.UnitAuto && img.DisplayWidth.Amount > 0 {
+		boundsW = img.DisplayWidth.Resolve(constraints.AvailableWidth, defaultFontSize)
+	}
+	if img.DisplayHeight.Unit != document.UnitAuto && img.DisplayHeight.Amount > 0 {
+		boundsH = img.DisplayHeight.Resolve(constraints.AvailableHeight, defaultFontSize)
+	}
+	scaleW := boundsW / intrinsicW
+	scaleH := boundsH / intrinsicH
+	scale := scaleW
+	if scaleH > scaleW {
+		scale = scaleH
+	}
+	return intrinsicW * scale, intrinsicH * scale
+}
+
+// clampImageSize constrains display dimensions to available space.
+func clampImageSize(fitMode document.ImageFitMode, w, h, aspectRatio float64, constraints Constraints) (float64, float64) {
+	if fitMode != document.FitStretch {
+		if w > constraints.AvailableWidth {
+			w = constraints.AvailableWidth
+			h = w / aspectRatio
+		}
+		if h > constraints.AvailableHeight {
+			h = constraints.AvailableHeight
+			w = h * aspectRatio
+		}
+	} else {
+		if w > constraints.AvailableWidth {
+			w = constraints.AvailableWidth
+		}
+		if h > constraints.AvailableHeight {
+			h = constraints.AvailableHeight
+		}
+	}
+	return w, h
 }
 
 // resolveBorderWidths extracts the four border widths as resolved edges.
