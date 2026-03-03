@@ -35,13 +35,13 @@
 
 ```
 ┌─────────────────────────────────────┐
-│  gpdf（入口点）                       │
+│  gpdf (entry point)                 │
 ├─────────────────────────────────────┤
-│  template  — 构建器 API、网格         │  第 3 层
+│  template  — Builder API, Grid      │  Layer 3
 ├─────────────────────────────────────┤
-│  document  — 节点、样式、布局         │  第 2 层
+│  document  — Nodes, Style, Layout   │  Layer 2
 ├─────────────────────────────────────┤
-│  pdf       — Writer、字体、流         │  第 1 层
+│  pdf       — Writer, Fonts, Streams │  Layer 1
 └─────────────────────────────────────┘
 ```
 

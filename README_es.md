@@ -35,13 +35,13 @@ Biblioteca de generación de PDF en Go puro, sin dependencias externas, con arqu
 
 ```
 ┌─────────────────────────────────────┐
-│  gpdf (punto de entrada)            │
+│  gpdf (entry point)                 │
 ├─────────────────────────────────────┤
-│  template  — API Builder, Cuadrícula│  Capa 3
+│  template  — Builder API, Grid      │  Layer 3
 ├─────────────────────────────────────┤
-│  document  — Nodos, Estilos, Layout │  Capa 2
+│  document  — Nodes, Style, Layout   │  Layer 2
 ├─────────────────────────────────────┤
-│  pdf       — Writer, Fuentes, Flujos│  Capa 1
+│  pdf       — Writer, Fonts, Streams │  Layer 1
 └─────────────────────────────────────┘
 ```
 
