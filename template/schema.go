@@ -228,36 +228,32 @@ func parsePageSize(s string) (document.Size, error) {
 	}
 }
 
+// namedColors maps color name strings to their pdf.Color values.
+var namedColors = map[string]pdf.Color{
+	"black":   pdf.Black,
+	"white":   pdf.White,
+	"red":     pdf.Red,
+	"green":   pdf.Green,
+	"blue":    pdf.Blue,
+	"yellow":  pdf.Yellow,
+	"cyan":    pdf.Cyan,
+	"magenta": pdf.Magenta,
+}
+
 // parseColor parses a color string into pdf.Color.
-// Supported formats: "#RRGGBB" hex, or named colors (black, white, red,
-// green, blue, yellow, cyan, magenta).
+// Supported formats: "#RRGGBB" hex, "rgb(r,g,b)", "gray(v)", or named colors.
 func parseColor(s string) (pdf.Color, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return pdf.Black, nil
 	}
 
-	switch strings.ToLower(s) {
-	case "black":
-		return pdf.Black, nil
-	case "white":
-		return pdf.White, nil
-	case "red":
-		return pdf.Red, nil
-	case "green":
-		return pdf.Green, nil
-	case "blue":
-		return pdf.Blue, nil
-	case "yellow":
-		return pdf.Yellow, nil
-	case "cyan":
-		return pdf.Cyan, nil
-	case "magenta":
-		return pdf.Magenta, nil
+	lower := strings.ToLower(s)
+	if c, ok := namedColors[lower]; ok {
+		return c, nil
 	}
 
 	// gray(N) format: grayscale color.
-	lower := strings.ToLower(s)
 	if strings.HasPrefix(lower, "gray(") && strings.HasSuffix(lower, ")") {
 		valStr := lower[5 : len(lower)-1]
 		val, err := strconv.ParseFloat(valStr, 64)
@@ -269,24 +265,7 @@ func parseColor(s string) (pdf.Color, error) {
 
 	// rgb(r, g, b) format: float RGB color (0.0-1.0).
 	if strings.HasPrefix(lower, "rgb(") && strings.HasSuffix(lower, ")") {
-		inner := lower[4 : len(lower)-1]
-		parts := strings.Split(inner, ",")
-		if len(parts) != 3 {
-			return pdf.Color{}, fmt.Errorf("invalid rgb color %q: expected 3 components", s)
-		}
-		r, err := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
-		if err != nil {
-			return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", s, err)
-		}
-		g, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
-		if err != nil {
-			return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", s, err)
-		}
-		b, err := strconv.ParseFloat(strings.TrimSpace(parts[2]), 64)
-		if err != nil {
-			return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", s, err)
-		}
-		return pdf.RGB(r, g, b), nil
+		return parseRGBColor(s, lower)
 	}
 
 	// Hex color: #RRGGBB.
@@ -299,6 +278,28 @@ func parseColor(s string) (pdf.Color, error) {
 	}
 
 	return pdf.Color{}, fmt.Errorf("unknown color: %q", s)
+}
+
+// parseRGBColor parses an "rgb(r, g, b)" color string with float components (0.0-1.0).
+func parseRGBColor(original, lower string) (pdf.Color, error) {
+	inner := lower[4 : len(lower)-1]
+	parts := strings.Split(inner, ",")
+	if len(parts) != 3 {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: expected 3 components", original)
+	}
+	r, err := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+	if err != nil {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", original, err)
+	}
+	g, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+	if err != nil {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", original, err)
+	}
+	b, err := strconv.ParseFloat(strings.TrimSpace(parts[2]), 64)
+	if err != nil {
+		return pdf.Color{}, fmt.Errorf("invalid rgb color %q: %w", original, err)
+	}
+	return pdf.RGB(r, g, b), nil
 }
 
 // parseAlignOption converts an alignment string to a TextOption.
