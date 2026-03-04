@@ -347,16 +347,8 @@ func applySchemaStyle(ss *SchemaStyle) []TextOption {
 	if ss.Align != "" {
 		opts = append(opts, parseAlignOption(ss.Align))
 	}
-	if ss.Color != "" {
-		if c, err := parseColor(ss.Color); err == nil {
-			opts = append(opts, TextColor(c))
-		}
-	}
-	if ss.Background != "" {
-		if c, err := parseColor(ss.Background); err == nil {
-			opts = append(opts, BgColor(c))
-		}
-	}
+	opts = appendColorOpt(opts, ss.Color, TextColor)
+	opts = appendColorOpt(opts, ss.Background, BgColor)
 	if ss.FontFamily != "" {
 		opts = append(opts, FontFamily(ss.FontFamily))
 	}
@@ -373,6 +365,17 @@ func applySchemaStyle(ss *SchemaStyle) []TextOption {
 		if v, err := parseValue(ss.TextIndent); err == nil {
 			opts = append(opts, TextIndent(v))
 		}
+	}
+	return opts
+}
+
+// appendColorOpt parses a color string and appends the resulting option if valid.
+func appendColorOpt(opts []TextOption, s string, fn func(pdf.Color) TextOption) []TextOption {
+	if s == "" {
+		return opts
+	}
+	if c, err := parseColor(s); err == nil {
+		opts = append(opts, fn(c))
 	}
 	return opts
 }
