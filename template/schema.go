@@ -122,6 +122,7 @@ type SchemaStyle struct {
 	Underline     bool    `json:"underline,omitempty"`
 	Strikethrough bool    `json:"strikethrough,omitempty"`
 	LetterSpacing float64 `json:"letterSpacing,omitempty"`
+	TextIndent    string  `json:"textIndent,omitempty"` // e.g. "24pt", "10mm"
 }
 
 // SchemaImage defines an image element.
@@ -140,6 +141,7 @@ type SchemaTable struct {
 	ColumnWidths []float64    `json:"columnWidths,omitempty"`
 	HeaderStyle  *SchemaStyle `json:"headerStyle,omitempty"`
 	StripeColor  string       `json:"stripeColor,omitempty"`
+	CellVAlign   string       `json:"cellVAlign,omitempty"` // "top", "middle", "bottom"
 }
 
 // SchemaList defines a list element.
@@ -366,6 +368,11 @@ func applySchemaStyle(ss *SchemaStyle) []TextOption {
 	}
 	if ss.LetterSpacing != 0 {
 		opts = append(opts, LetterSpacing(ss.LetterSpacing))
+	}
+	if ss.TextIndent != "" {
+		if v, err := parseValue(ss.TextIndent); err == nil {
+			opts = append(opts, TextIndent(v))
+		}
 	}
 	return opts
 }
@@ -646,6 +653,20 @@ func parseFitMode(s string) (document.ImageFitMode, bool) {
 	}
 }
 
+// parseVerticalAlign converts a vertical alignment string to a VerticalAlign constant.
+func parseVerticalAlign(s string) (document.VerticalAlign, bool) {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "top":
+		return document.VAlignTop, true
+	case "middle":
+		return document.VAlignMiddle, true
+	case "bottom":
+		return document.VAlignBottom, true
+	default:
+		return document.VAlignTop, false
+	}
+}
+
 // parseImageAlign converts an alignment string to a TextAlign constant.
 func parseImageAlign(s string) (document.TextAlign, bool) {
 	switch strings.ToLower(s) {
@@ -675,6 +696,11 @@ func buildSchemaTable(c *ColBuilder, tbl *SchemaTable) {
 	if tbl.StripeColor != "" {
 		if clr, err := parseColor(tbl.StripeColor); err == nil {
 			opts = append(opts, TableStripe(clr))
+		}
+	}
+	if tbl.CellVAlign != "" {
+		if align, ok := parseVerticalAlign(tbl.CellVAlign); ok {
+			opts = append(opts, TableCellVAlign(align))
 		}
 	}
 	c.Table(tbl.Header, tbl.Rows, opts...)
