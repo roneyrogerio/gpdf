@@ -26,6 +26,9 @@ jobs:
       - name: Run tests
         run: go test -v -race -count=1 ./...
 
+      - name: Run example tests
+        run: cd _examples && go test -v -race -count=1 ./...
+
   lint:
     runs-on: ubuntu-latest
     steps:
