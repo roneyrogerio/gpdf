@@ -3432,7 +3432,7 @@ func TestListItemNode_StyleViaList(t *testing.T) {
 	lst := &document.List{
 		ListStyle: document.Style{FontSize: 12},
 		Items: []document.ListItem{
-			{ItemStyle: document.Style{}},           // No font size → falls back to list
+			{ItemStyle: document.Style{}},             // No font size → falls back to list
 			{ItemStyle: document.Style{FontSize: 16}}, // Has font size → overrides
 		},
 	}

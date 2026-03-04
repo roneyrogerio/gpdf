@@ -1903,7 +1903,7 @@ func TestExtractJPEGDimensions_ValidSOF0(t *testing.T) {
 		0x08,       // precision (at i+4)
 		0x00, 0x40, // height=64 (at i+5, i+6)
 		0x00, 0x80, // width=128 (at i+7, i+8)
-		0x00,       // extra byte to satisfy i+9 < len
+		0x00, // extra byte to satisfy i+9 < len
 	}
 	w, h := extractJPEGDimensions(data)
 	if w != 128 || h != 64 {
@@ -1937,7 +1937,7 @@ func TestExtractJPEGDimensions_WithPrecedingSegment(t *testing.T) {
 		0x08,       // precision
 		0x01, 0x00, // height=256
 		0x02, 0x00, // width=512
-		0x00,       // extra byte to satisfy i+9 < len
+		0x00, // extra byte to satisfy i+9 < len
 	}
 	w, h := extractJPEGDimensions(data)
 	if w != 512 || h != 256 {

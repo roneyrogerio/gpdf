@@ -551,11 +551,11 @@ func TestParseRGBColor(t *testing.T) {
 
 func TestParseRGBColor_Errors(t *testing.T) {
 	bad := []string{
-		"rgb(1.0, 0.0)",        // only 2 components
-		"rgb(a, 0.0, 0.0)",     // non-numeric
-		"rgb(1.0, b, 0.0)",     // non-numeric g
-		"rgb(1.0, 0.0, c)",     // non-numeric b
-		"rgb(1,2,3,4)",         // 4 components
+		"rgb(1.0, 0.0)",    // only 2 components
+		"rgb(a, 0.0, 0.0)", // non-numeric
+		"rgb(1.0, b, 0.0)", // non-numeric g
+		"rgb(1.0, 0.0, c)", // non-numeric b
+		"rgb(1,2,3,4)",     // 4 components
 	}
 	for _, s := range bad {
 		if _, err := parseColor(s); err == nil {
@@ -599,7 +599,7 @@ func TestParseQRErrorCorrection(t *testing.T) {
 		{"M", true},
 		{"Q", true},
 		{"H", true},
-		{"l", true},  // lowercase
+		{"l", true},   // lowercase
 		{" h ", true}, // whitespace
 		{"X", false},
 		{"", false},
@@ -810,9 +810,9 @@ func TestBuildSchemaTable_WithCellVAlign(t *testing.T) {
 			{Row: SchemaRowDef{
 				Cols: []SchemaCol{
 					{Span: 12, Table: &SchemaTable{
-						Header:      []string{"Name", "Value"},
-						Rows:        [][]string{{"A", "1"}},
-						CellVAlign:  "middle",
+						Header:     []string{"Name", "Value"},
+						Rows:       [][]string{{"A", "1"}},
+						CellVAlign: "middle",
 					}},
 				},
 			}},
