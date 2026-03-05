@@ -30,6 +30,7 @@ Biblioteca de generación de PDF en Go puro, sin dependencias externas, con arqu
 - **Espacios de color** — RGB, escala de grises, CMYK
 - **Imágenes** — incrustación de JPEG y PNG con opciones de ajuste
 - **Posicionamiento absoluto** — colocar elementos en coordenadas XY exactas en la página
+- **Superposición de PDF existente** — abrir PDFs existentes y agregar texto, imágenes, sellos encima
 - **Metadatos del documento** — título, autor, asunto, creador
 
 ## Benchmark
@@ -326,6 +327,33 @@ doc := template.Letter(template.LetterData{
 })
 ```
 
+### Superposición de PDF existente
+
+Abrir un PDF existente y superponer contenido usando la misma API de constructores:
+
+```go
+// Abrir un PDF existente
+doc, err := gpdf.Open(existingPDFBytes)
+
+// Agregar marca de agua "DRAFT" en la página 1
+doc.Overlay(0, func(p *template.PageBuilder) {
+	p.Absolute(document.Mm(50), document.Mm(140), func(c *template.ColBuilder) {
+		c.Text("DRAFT", template.FontSize(72),
+			template.TextColor(pdf.Gray(0.85)))
+	})
+})
+
+// Agregar números de página en todas las páginas
+count, _ := doc.PageCount()
+doc.EachPage(func(i int, p *template.PageBuilder) {
+	p.Absolute(document.Mm(170), document.Mm(285), func(c *template.ColBuilder) {
+		c.Text(fmt.Sprintf("%d / %d", i+1, count), template.FontSize(10))
+	}, template.AbsoluteWidth(document.Mm(20)))
+})
+
+result, _ := doc.Save()
+```
+
 ### Metadatos del documento
 
 ```go
@@ -420,6 +448,16 @@ doc.Render(f)
 | `gpdf.AbsoluteWidth(value)` | Establecer ancho explícito (predeterminado: espacio restante) |
 | `gpdf.AbsoluteHeight(value)` | Establecer altura explícita (predeterminado: espacio restante) |
 | `gpdf.AbsoluteOriginPage()` | Usar esquina de página como origen en lugar del área de contenido |
+
+### Operaciones con PDF existente
+
+| Función / Método | Descripción |
+|---|---|
+| `gpdf.Open(data, opts...)` | Abrir un PDF existente para superposición |
+| `doc.PageCount()` | Obtener el número de páginas |
+| `doc.Overlay(page, fn)` | Superponer contenido en una página específica |
+| `doc.EachPage(fn)` | Aplicar superposición a todas las páginas |
+| `doc.Save()` | Guardar el PDF modificado |
 
 ### Opciones de texto
 

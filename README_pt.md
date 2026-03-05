@@ -30,6 +30,7 @@ Biblioteca de geração de PDF em Go puro, sem dependências externas, com arqui
 - **Espaços de cor** — RGB, escala de cinza, CMYK
 - **Imagens** — incorporação de JPEG e PNG com opções de ajuste
 - **Posicionamento absoluto** — posicionar elementos em coordenadas XY exatas na página
+- **Sobreposição de PDF existente** — abrir PDFs existentes e adicionar texto, imagens, carimbos por cima
 - **Metadados do documento** — título, autor, assunto, criador
 
 ## Benchmark
@@ -377,6 +378,33 @@ defer f.Close()
 doc.Render(f)
 ```
 
+### Sobreposição de PDF existente
+
+Abrir um PDF existente e sobrepor conteúdo usando a mesma API de construtores:
+
+```go
+// Abrir um PDF existente
+doc, err := gpdf.Open(existingPDFBytes)
+
+// Adicionar marca d'água "DRAFT" na página 1
+doc.Overlay(0, func(p *template.PageBuilder) {
+	p.Absolute(document.Mm(50), document.Mm(140), func(c *template.ColBuilder) {
+		c.Text("DRAFT", template.FontSize(72),
+			template.TextColor(pdf.Gray(0.85)))
+	})
+})
+
+// Adicionar números de página em todas as páginas
+count, _ := doc.PageCount()
+doc.EachPage(func(i int, p *template.PageBuilder) {
+	p.Absolute(document.Mm(170), document.Mm(285), func(c *template.ColBuilder) {
+		c.Text(fmt.Sprintf("%d / %d", i+1, count), template.FontSize(10))
+	}, template.AbsoluteWidth(document.Mm(20)))
+})
+
+result, _ := doc.Save()
+```
+
 ## Referência API
 
 ### Opções do documento
@@ -420,6 +448,16 @@ doc.Render(f)
 | `gpdf.AbsoluteWidth(value)` | Definir largura explícita (padrão: espaço restante) |
 | `gpdf.AbsoluteHeight(value)` | Definir altura explícita (padrão: espaço restante) |
 | `gpdf.AbsoluteOriginPage()` | Usar canto da página como origem em vez da área de conteúdo |
+
+### Operações com PDF existente
+
+| Função / Método | Descrição |
+|---|---|
+| `gpdf.Open(data, opts...)` | Abrir um PDF existente para sobreposição |
+| `doc.PageCount()` | Obter o número de páginas |
+| `doc.Overlay(page, fn)` | Sobrepor conteúdo em uma página específica |
+| `doc.EachPage(fn)` | Aplicar sobreposição em todas as páginas |
+| `doc.Save()` | Salvar o PDF modificado |
 
 ### Opções de texto
 

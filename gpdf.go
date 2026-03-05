@@ -109,6 +109,22 @@ var (
 	NewLetter = template.Letter
 )
 
+// Open creates an ExistingDocument from raw PDF data for reading and modifying.
+// Use the returned document's Overlay method to add content on top of existing pages.
+//
+//	doc, err := gpdf.Open(pdfBytes, gpdf.WithFont("NotoSans", fontData))
+//	doc.Overlay(0, func(p *template.PageBuilder) {
+//	    p.AutoRow(func(r *template.RowBuilder) {
+//	        r.Col(12, func(c *template.ColBuilder) {
+//	            c.Text("APPROVED", template.FontSize(48))
+//	        })
+//	    })
+//	})
+//	result, err := doc.Save()
+func Open(data []byte, opts ...template.Option) (*template.ExistingDocument, error) {
+	return template.OpenExisting(data, opts...)
+}
+
 // NewDocumentFromJSON is an alias for FromJSON that creates a Document
 // from a JSON schema, optionally resolving Go template expressions with data.
 func NewDocumentFromJSON(schema []byte, data any, opts ...template.Option) (*template.Document, error) {

@@ -30,6 +30,7 @@
 - **カラースペース** — RGB、グレースケール、CMYK
 - **画像** — JPEGとPNGの埋め込み（フィットオプション対応）
 - **絶対位置指定** — ページ上の任意のXY座標に要素を配置
+- **既存PDFオーバーレイ** — 既存PDFを開いてテキスト、画像、スタンプを上に追加
 - **ドキュメントメタデータ** — タイトル、著者、件名、作成者
 
 ## ベンチマーク
@@ -335,6 +336,33 @@ doc.Footer(func(p *template.PageBuilder) {
 })
 ```
 
+### 既存PDFオーバーレイ
+
+既存のPDFを開いて、同じビルダーAPIでコンテンツを重ねて配置:
+
+```go
+// 既存PDFを開く
+doc, err := gpdf.Open(existingPDFBytes)
+
+// 1ページ目に「DRAFT」透かしを追加
+doc.Overlay(0, func(p *template.PageBuilder) {
+	p.Absolute(document.Mm(50), document.Mm(140), func(c *template.ColBuilder) {
+		c.Text("DRAFT", template.FontSize(72),
+			template.TextColor(pdf.Gray(0.85)))
+	})
+})
+
+// 全ページにページ番号を追加
+count, _ := doc.PageCount()
+doc.EachPage(func(i int, p *template.PageBuilder) {
+	p.Absolute(document.Mm(170), document.Mm(285), func(c *template.ColBuilder) {
+		c.Text(fmt.Sprintf("%d / %d", i+1, count), template.FontSize(10))
+	}, template.AbsoluteWidth(document.Mm(20)))
+})
+
+result, _ := doc.Save()
+```
+
 ### JSONスキーマ
 
 JSONのみでドキュメントを定義:
@@ -539,6 +567,16 @@ doc.Render(f)
 | `gpdf.AbsoluteWidth(value)` | 明示的な幅を設定（デフォルト: 残りスペース） |
 | `gpdf.AbsoluteHeight(value)` | 明示的な高さを設定（デフォルト: 残りスペース） |
 | `gpdf.AbsoluteOriginPage()` | コンテンツ領域ではなくページ角を原点にする |
+
+### 既存PDF操作
+
+| 関数 / メソッド | 説明 |
+|---|---|
+| `gpdf.Open(data, opts...)` | 既存PDFをオーバーレイ用に開く |
+| `doc.PageCount()` | ページ数を取得 |
+| `doc.Overlay(page, fn)` | 特定ページにコンテンツを重ねて配置 |
+| `doc.EachPage(fn)` | 全ページにオーバーレイを適用 |
+| `doc.Save()` | 変更したPDFを保存 |
 
 ### テキストオプション
 

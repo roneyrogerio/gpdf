@@ -31,6 +31,7 @@ A pure Go, zero-dependency PDF generation library with a layered architecture an
 - **Color spaces** — RGB, Grayscale, CMYK
 - **Images** — JPEG and PNG embedding with fit options
 - **Absolute positioning** — place elements at exact XY coordinates on the page
+- **Existing PDF overlay** — open existing PDFs and add text, images, stamps on top
 - **Document metadata** — title, author, subject, creator
 
 ## Benchmark
@@ -409,6 +410,33 @@ for i := 1; i <= 5; i++ {
 }
 ```
 
+### Existing PDF Overlay
+
+Open an existing PDF and overlay content using the same builder API:
+
+```go
+// Open an existing PDF
+doc, err := gpdf.Open(existingPDFBytes)
+
+// Add a "DRAFT" watermark on page 1
+doc.Overlay(0, func(p *template.PageBuilder) {
+	p.Absolute(document.Mm(50), document.Mm(140), func(c *template.ColBuilder) {
+		c.Text("DRAFT", template.FontSize(72),
+			template.TextColor(pdf.Gray(0.85)))
+	})
+})
+
+// Add page numbers to every page
+count, _ := doc.PageCount()
+doc.EachPage(func(i int, p *template.PageBuilder) {
+	p.Absolute(document.Mm(170), document.Mm(285), func(c *template.ColBuilder) {
+		c.Text(fmt.Sprintf("%d / %d", i+1, count), template.FontSize(10))
+	}, template.AbsoluteWidth(document.Mm(20)))
+})
+
+result, _ := doc.Save()
+```
+
 ### JSON Schema
 
 Define documents entirely in JSON:
@@ -620,6 +648,16 @@ doc.Render(f)
 | `gpdf.AbsoluteWidth(value)` | Set explicit width (default: remaining space) |
 | `gpdf.AbsoluteHeight(value)` | Set explicit height (default: remaining space) |
 | `gpdf.AbsoluteOriginPage()` | Use page corner as origin instead of content area |
+
+### Existing PDF Operations
+
+| Function / Method | Description |
+|---|---|
+| `gpdf.Open(data, opts...)` | Open an existing PDF for overlay |
+| `doc.PageCount()` | Get the number of pages |
+| `doc.Overlay(page, fn)` | Add content on top of a specific page |
+| `doc.EachPage(fn)` | Apply overlay to every page |
+| `doc.Save()` | Save the modified PDF |
 
 ### Text Options
 
