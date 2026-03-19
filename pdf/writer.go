@@ -31,10 +31,10 @@ type Writer struct {
 	closed     bool
 
 	// Extension hooks for gpdf-pro features (PDF/A, encryption, signatures).
-	catalogExtra  Dict                                // extra entries merged into catalog dict
-	trailerExtra  Dict                                // extra entries merged into trailer dict
+	catalogExtra  Dict                                   // extra entries merged into catalog dict
+	trailerExtra  Dict                                   // extra entries merged into trailer dict
 	onWriteObject func(ref ObjectRef, obj Object) Object // object transformation hook
-	beforeClose   []func(pw *Writer) error            // callbacks run before Close finalizes
+	beforeClose   []func(pw *Writer) error               // callbacks run before Close finalizes
 }
 
 // countWriter wraps an io.Writer and tracks the total number of bytes written.

@@ -481,4 +481,3 @@ func WriteOverlayToModifier(result *OverlayResult, m *pdf.Modifier) ([]byte, *pd
 
 	return result.Content, &resources, nil
 }
-

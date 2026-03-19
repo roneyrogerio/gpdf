@@ -723,9 +723,9 @@ func (r *PDFRenderer) writeType0Font(pw *pdf.Writer, family string, fontRef pdf.
 			pdf.Name("Ordering"):   pdf.LiteralString("Identity"),
 			pdf.Name("Supplement"): pdf.Integer(0),
 		},
-		pdf.Name("FontDescriptor"):    descRef,
-		pdf.Name("DW"):                pdf.Integer(dw),
-		pdf.Name("CIDToGIDMap"):       pdf.Name("Identity"),
+		pdf.Name("FontDescriptor"): descRef,
+		pdf.Name("DW"):             pdf.Integer(dw),
+		pdf.Name("CIDToGIDMap"):    pdf.Name("Identity"),
 	}
 	if len(wArray) > 0 {
 		cidFontDict[pdf.Name("W")] = wArray

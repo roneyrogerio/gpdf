@@ -41,7 +41,7 @@ func generateSourcePDF(t *testing.T, numPages int) []byte {
 		for j := 0; j < 5; j++ {
 			page.AutoRow(func(r *template.RowBuilder) {
 				r.Col(12, func(c *template.ColBuilder) {
-					c.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. "+
+					c.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
 						"Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 				})
 			})

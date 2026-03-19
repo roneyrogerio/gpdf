@@ -31,8 +31,8 @@ type Config struct {
 	DefaultFont string
 	FontSize    float64
 	Metadata    document.DocumentMetadata
-	rawFonts    map[string][]byte            // font family -> raw TTF data
-	WriterSetup func(pw *pdf.Writer)         // hook to configure Writer before rendering
+	rawFonts    map[string][]byte    // font family -> raw TTF data
+	WriterSetup func(pw *pdf.Writer) // hook to configure Writer before rendering
 }
 
 // Option configures a Document.
