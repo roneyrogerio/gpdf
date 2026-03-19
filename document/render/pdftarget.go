@@ -141,14 +141,40 @@ func (r *PDFRenderer) RenderText(text string, pos document.Point, style document
 	}
 
 	// Resolve the PDF font name including weight/style variants.
-	fontName := resolvePDFFontName(style.FontFamily, style.FontWeight, style.FontStyle)
+	fontName, ttFontName, simulateBold, simulateItalic := r.resolveTextFont(style)
 
-	// For TrueType fonts, if the variant (e.g. "NotoSansJP-Bold") is not
-	// registered, fall back to the base family name for rendering and use
-	// PDF text rendering mode to simulate bold/italic.
-	ttFontName := fontName
-	simulateBold := false
-	simulateItalic := false
+	fontResName, err := r.ensureFont(fontName)
+	if err != nil {
+		return err
+	}
+
+	pdfY := r.pageHeight - pos.Y - fontSize
+
+	var buf strings.Builder
+	buf.WriteString(style.Color.FillColorCmd())
+	buf.WriteByte('\n')
+
+	r.writeTextBoldSetup(&buf, simulateBold, style, fontSize)
+	r.writeTextBegin(&buf, fontResName, fontSize, simulateBold, simulateItalic, pos.X, pdfY)
+	r.writeTextSpacing(&buf, style)
+
+	if !simulateItalic {
+		fmt.Fprintf(&buf, "%g %g Td\n", pos.X, pdfY)
+	}
+	if ttf, ok := r.ttFonts[ttFontName]; ok {
+		fmt.Fprintf(&buf, "<%s> Tj\n", hex.EncodeToString(ttf.Encode(text)))
+	} else {
+		fmt.Fprintf(&buf, "(%s) Tj\n", escapeStringPDF(text))
+	}
+
+	r.writeTextEnd(&buf, style, simulateBold)
+	r.pageContent = append(r.pageContent, buf.String()...)
+	return nil
+}
+
+func (r *PDFRenderer) resolveTextFont(style document.Style) (fontName, ttFontName string, simulateBold, simulateItalic bool) {
+	fontName = resolvePDFFontName(style.FontFamily, style.FontWeight, style.FontStyle)
+	ttFontName = fontName
 	if _, ok := r.ttFonts[fontName]; !ok {
 		if _, ok := r.ttFonts[style.FontFamily]; ok {
 			ttFontName = style.FontFamily
@@ -157,64 +183,38 @@ func (r *PDFRenderer) RenderText(text string, pos document.Point, style document
 			simulateItalic = style.FontStyle == document.StyleItalic
 		}
 	}
+	return
+}
 
-	// Ensure the font is registered.
-	fontResName, err := r.ensureFont(fontName)
-	if err != nil {
-		return err
-	}
-
-	// Convert layout Y (top-left origin) to PDF Y (bottom-left origin).
-	// The text baseline is approximately at pos.Y + fontSize (ascender).
-	pdfY := r.pageHeight - pos.Y - fontSize
-
-	var buf strings.Builder
-
-	// Set fill color for text.
-	buf.WriteString(style.Color.FillColorCmd())
-	buf.WriteByte('\n')
-
-	// Simulate bold for TrueType fonts by using text rendering mode 2
-	// (fill + stroke) with a thin line width.
+func (r *PDFRenderer) writeTextBoldSetup(buf *strings.Builder, simulateBold bool, style document.Style, fontSize float64) {
 	if simulateBold {
 		buf.WriteString(style.Color.StrokeColorCmd())
 		buf.WriteByte('\n')
-		lineWidth := fontSize * 0.03
-		fmt.Fprintf(&buf, "%g w\n", lineWidth)
+		fmt.Fprintf(buf, "%g w\n", fontSize*0.03)
 	}
+}
 
-	// Simulate italic for TrueType fonts using a text matrix with shear.
-	if simulateItalic {
-		buf.WriteString("BT\n")
-		// Italic shear angle ~12 degrees (tan(12°) ≈ 0.2126)
-		fmt.Fprintf(&buf, "/%s %g Tf\n", fontResName, fontSize)
-		if simulateBold {
-			buf.WriteString("2 Tr\n") // fill + stroke
-		}
-		fmt.Fprintf(&buf, "1 0 0.2126 1 %g %g Tm\n", pos.X, pdfY)
-	} else {
-		// Begin text block.
-		buf.WriteString("BT\n")
-		fmt.Fprintf(&buf, "/%s %g Tf\n", fontResName, fontSize)
-		if simulateBold {
-			buf.WriteString("2 Tr\n") // fill + stroke
-		}
+func (r *PDFRenderer) writeTextBegin(buf *strings.Builder, fontResName string, fontSize float64, simulateBold, simulateItalic bool, x, y float64) {
+	buf.WriteString("BT\n")
+	fmt.Fprintf(buf, "/%s %g Tf\n", fontResName, fontSize)
+	if simulateBold {
+		buf.WriteString("2 Tr\n")
 	}
+	if simulateItalic {
+		fmt.Fprintf(buf, "1 0 0.2126 1 %g %g Tm\n", x, y)
+	}
+}
+
+func (r *PDFRenderer) writeTextSpacing(buf *strings.Builder, style document.Style) {
 	if style.WordSpacing != 0 {
-		fmt.Fprintf(&buf, "%g Tw\n", style.WordSpacing)
+		fmt.Fprintf(buf, "%g Tw\n", style.WordSpacing)
 	}
 	if style.LetterSpacing != 0 {
-		fmt.Fprintf(&buf, "%g Tc\n", style.LetterSpacing)
+		fmt.Fprintf(buf, "%g Tc\n", style.LetterSpacing)
 	}
-	if !simulateItalic {
-		fmt.Fprintf(&buf, "%g %g Td\n", pos.X, pdfY)
-	}
-	if ttf, ok := r.ttFonts[ttFontName]; ok {
-		encoded := ttf.Encode(text)
-		fmt.Fprintf(&buf, "<%s> Tj\n", hex.EncodeToString(encoded))
-	} else {
-		fmt.Fprintf(&buf, "(%s) Tj\n", escapeStringPDF(text))
-	}
+}
+
+func (r *PDFRenderer) writeTextEnd(buf *strings.Builder, style document.Style, simulateBold bool) {
 	if style.LetterSpacing != 0 {
 		buf.WriteString("0 Tc\n")
 	}
@@ -222,12 +222,9 @@ func (r *PDFRenderer) RenderText(text string, pos document.Point, style document
 		buf.WriteString("0 Tw\n")
 	}
 	if simulateBold {
-		buf.WriteString("0 Tr\n") // reset to fill mode
+		buf.WriteString("0 Tr\n")
 	}
 	buf.WriteString("ET\n")
-
-	r.pageContent = append(r.pageContent, buf.String()...)
-	return nil
 }
 
 // RenderRect draws a rectangle with optional fill and stroke.
@@ -664,78 +661,111 @@ func (r *PDFRenderer) ensureFont(family string) (string, error) {
 //	           → ToUnicode CMap stream
 func (r *PDFRenderer) writeType0Font(pw *pdf.Writer, family string, fontRef pdf.ObjectRef, ttf *font.TrueTypeFont, rawData []byte) error {
 	metrics := ttf.Metrics()
-	usedRunes := ttf.UsedRunes()
-
-	// Collect runes for subsetting.
-	runes := make([]rune, 0, len(usedRunes))
-	for r := range usedRunes {
-		runes = append(runes, r)
-	}
 
 	// Subset the font to include only used glyphs.
-	subsetData, err := ttf.Subset(runes)
-	if err != nil {
-		// Fall back to full font data if subsetting fails.
-		subsetData = rawData
-	}
+	subsetData := r.subsetFontData(ttf, rawData)
 
 	// Write FontFile2 (embedded font stream).
-	fontFileRef := pw.AllocObject()
-	fontFileDict := pdf.Dict{
+	fontFileRef, err := writeCompressedStream(pw, subsetData, pdf.Dict{
 		pdf.Name("Length1"): pdf.Integer(len(subsetData)),
-	}
-	fontFileContent := subsetData
-	compressed, err := pdf.CompressFlate(subsetData)
-	if err == nil {
-		fontFileDict[pdf.Name("Filter")] = pdf.Name("FlateDecode")
-		fontFileContent = compressed
-	}
-	if err := pw.WriteObject(fontFileRef, pdf.Stream{
-		Dict:    fontFileDict,
-		Content: fontFileContent,
-	}); err != nil {
+	})
+	if err != nil {
 		return err
 	}
 
 	// Write FontDescriptor.
+	descRef, err := r.writeFontDescriptor(pw, family, metrics, fontFileRef)
+	if err != nil {
+		return err
+	}
+
+	// Build widths and write CIDFont + ToUnicode + Type0.
+	runeToGID := ttf.RuneToGID()
+	wArray := buildGlyphWidthArray(ttf, runeToGID, metrics.UnitsPerEm)
+
+	dw := 1000
+	if spaceW, ok := ttf.GlyphWidth(' '); ok {
+		dw = spaceW * 1000 / metrics.UnitsPerEm
+	}
+
+	cidFontRef, err := r.writeCIDFont(pw, family, descRef, dw, wArray)
+	if err != nil {
+		return err
+	}
+
+	toUnicodeRef, err := writeToUnicodeCMap(pw, runeToGID)
+	if err != nil {
+		return err
+	}
+
+	return pw.WriteObject(fontRef, pdf.Dict{
+		pdf.Name("Type"):            pdf.Name("Font"),
+		pdf.Name("Subtype"):         pdf.Name("Type0"),
+		pdf.Name("BaseFont"):        pdf.Name(family),
+		pdf.Name("Encoding"):        pdf.Name("Identity-H"),
+		pdf.Name("DescendantFonts"): pdf.Array{cidFontRef},
+		pdf.Name("ToUnicode"):       toUnicodeRef,
+	})
+}
+
+func (r *PDFRenderer) subsetFontData(ttf *font.TrueTypeFont, rawData []byte) []byte {
+	usedRunes := ttf.UsedRunes()
+	runes := make([]rune, 0, len(usedRunes))
+	for r := range usedRunes {
+		runes = append(runes, r)
+	}
+	sort.Slice(runes, func(i, j int) bool { return runes[i] < runes[j] })
+	subsetData, err := ttf.Subset(runes)
+	if err != nil {
+		return rawData
+	}
+	return subsetData
+}
+
+func writeCompressedStream(pw *pdf.Writer, data []byte, extraDict pdf.Dict) (pdf.ObjectRef, error) {
+	ref := pw.AllocObject()
+	dict := extraDict
+	content := data
+	if compressed, err := pdf.CompressFlate(data); err == nil {
+		dict[pdf.Name("Filter")] = pdf.Name("FlateDecode")
+		content = compressed
+	}
+	return ref, pw.WriteObject(ref, pdf.Stream{Dict: dict, Content: content})
+}
+
+func (r *PDFRenderer) writeFontDescriptor(pw *pdf.Writer, family string, metrics font.Metrics, fontFileRef pdf.ObjectRef) (pdf.ObjectRef, error) {
 	descRef := pw.AllocObject()
-	flags := 4 // Symbolic
-	descDict := pdf.Dict{
+	return descRef, pw.WriteObject(descRef, pdf.Dict{
 		pdf.Name("Type"):        pdf.Name("FontDescriptor"),
 		pdf.Name("FontName"):    pdf.Name(family),
-		pdf.Name("Flags"):       pdf.Integer(flags),
+		pdf.Name("Flags"):       pdf.Integer(4), // Symbolic
 		pdf.Name("ItalicAngle"): pdf.Real(metrics.ItalicAngle),
 		pdf.Name("Ascent"):      pdf.Integer(metrics.Ascender * 1000 / metrics.UnitsPerEm),
 		pdf.Name("Descent"):     pdf.Integer(metrics.Descender * 1000 / metrics.UnitsPerEm),
 		pdf.Name("CapHeight"):   pdf.Integer(metrics.CapHeight * 1000 / metrics.UnitsPerEm),
 		pdf.Name("FontFile2"):   fontFileRef,
 		pdf.Name("FontBBox"):    pdf.Rectangle{LLX: 0, LLY: float64(metrics.Descender * 1000 / metrics.UnitsPerEm), URX: 1000, URY: float64(metrics.Ascender * 1000 / metrics.UnitsPerEm)},
-	}
-	if err := pw.WriteObject(descRef, descDict); err != nil {
-		return err
-	}
+	})
+}
 
-	// Build W (widths) array: [gid [w1 w2 ...] gid [w1 w2 ...] ...]
-	runeToGID := ttf.RuneToGID()
-	type gidWidth struct {
-		gid   uint16
-		width int
-	}
+type gidWidth struct {
+	gid   uint16
+	width int
+}
+
+func buildGlyphWidthArray(ttf *font.TrueTypeFont, runeToGID map[rune]uint16, unitsPerEm int) pdf.Array {
 	var gidWidths []gidWidth
 	for r, gid := range runeToGID {
 		w, ok := ttf.GlyphWidth(r)
 		if !ok {
 			continue
 		}
-		// Convert from font units to 1/1000 of text space unit.
-		w1000 := w * 1000 / metrics.UnitsPerEm
-		gidWidths = append(gidWidths, gidWidth{gid: gid, width: w1000})
+		gidWidths = append(gidWidths, gidWidth{gid: gid, width: w * 1000 / unitsPerEm})
 	}
 	sort.Slice(gidWidths, func(i, j int) bool {
 		return gidWidths[i].gid < gidWidths[j].gid
 	})
 
-	// Build the W array with consecutive glyph runs.
 	var wArray pdf.Array
 	for i := 0; i < len(gidWidths); {
 		startGID := gidWidths[i].gid
@@ -748,14 +778,10 @@ func (r *PDFRenderer) writeType0Font(pw *pdf.Writer, family string, fontRef pdf.
 		wArray = append(wArray, pdf.Integer(startGID), widths)
 		i = j
 	}
+	return wArray
+}
 
-	// Default width (DW): use width of space or 1000.
-	dw := 1000
-	if spaceW, ok := ttf.GlyphWidth(' '); ok {
-		dw = spaceW * 1000 / metrics.UnitsPerEm
-	}
-
-	// Write CIDFont dictionary.
+func (r *PDFRenderer) writeCIDFont(pw *pdf.Writer, family string, descRef pdf.ObjectRef, dw int, wArray pdf.Array) (pdf.ObjectRef, error) {
 	cidFontRef := pw.AllocObject()
 	cidFontDict := pdf.Dict{
 		pdf.Name("Type"):     pdf.Name("Font"),
@@ -773,41 +799,12 @@ func (r *PDFRenderer) writeType0Font(pw *pdf.Writer, family string, fontRef pdf.
 	if len(wArray) > 0 {
 		cidFontDict[pdf.Name("W")] = wArray
 	}
-	if err := pw.WriteObject(cidFontRef, cidFontDict); err != nil {
-		return err
-	}
+	return cidFontRef, pw.WriteObject(cidFontRef, cidFontDict)
+}
 
-	// Write ToUnicode CMap stream.
-	toUnicodeData := font.GenerateToUnicodeCMap(runeToGID)
-	toUnicodeRef := pw.AllocObject()
-	toUnicodeContent := toUnicodeData
-	if c, err := pdf.CompressFlate(toUnicodeData); err == nil {
-		toUnicodeContent = c
-		if err := pw.WriteObject(toUnicodeRef, pdf.Stream{
-			Dict:    pdf.Dict{pdf.Name("Filter"): pdf.Name("FlateDecode")},
-			Content: toUnicodeContent,
-		}); err != nil {
-			return err
-		}
-	} else {
-		if err := pw.WriteObject(toUnicodeRef, pdf.Stream{
-			Dict:    pdf.Dict{},
-			Content: toUnicodeContent,
-		}); err != nil {
-			return err
-		}
-	}
-
-	// Write the Type0 font dictionary (using the pre-reserved fontRef).
-	type0Dict := pdf.Dict{
-		pdf.Name("Type"):            pdf.Name("Font"),
-		pdf.Name("Subtype"):         pdf.Name("Type0"),
-		pdf.Name("BaseFont"):        pdf.Name(family),
-		pdf.Name("Encoding"):        pdf.Name("Identity-H"),
-		pdf.Name("DescendantFonts"): pdf.Array{cidFontRef},
-		pdf.Name("ToUnicode"):       toUnicodeRef,
-	}
-	return pw.WriteObject(fontRef, type0Dict)
+func writeToUnicodeCMap(pw *pdf.Writer, runeToGID map[rune]uint16) (pdf.ObjectRef, error) {
+	data := font.GenerateToUnicodeCMap(runeToGID)
+	return writeCompressedStream(pw, data, pdf.Dict{})
 }
 
 // ensureImage ensures an image is registered and returns its resource name.

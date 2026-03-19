@@ -410,30 +410,47 @@ func (pw *Writer) Close() error {
 	}
 
 	// 1. Write the page tree object.
-	kids := make(Array, len(pw.pages))
-	for i, ref := range pw.pages {
-		kids[i] = ref
-	}
-	pageTreeDict := Dict{
-		Name("Type"):  Name("Pages"),
-		Name("Kids"):  kids,
-		Name("Count"): Integer(len(pw.pages)),
-	}
-	if err := pw.WriteObject(pw.pageTree, pageTreeDict); err != nil {
+	if err := pw.writePageTree(); err != nil {
 		return err
 	}
 
 	// 2. Write info dictionary if any metadata is set.
-	var infoRef ObjectRef
-	infoDict := pw.info.ToDict()
-	if len(infoDict) > 0 {
-		infoRef = pw.AllocObject()
-		if err := pw.WriteObject(infoRef, infoDict); err != nil {
-			return err
-		}
+	infoRef, err := pw.writeInfoDict()
+	if err != nil {
+		return err
 	}
 
 	// 3. Write the catalog object, merging any extra entries.
+	if err := pw.writeCatalog(); err != nil {
+		return err
+	}
+
+	// 4. Write xref, trailer, and EOF.
+	return pw.writeTrailer(infoRef)
+}
+
+func (pw *Writer) writePageTree() error {
+	kids := make(Array, len(pw.pages))
+	for i, ref := range pw.pages {
+		kids[i] = ref
+	}
+	return pw.WriteObject(pw.pageTree, Dict{
+		Name("Type"):  Name("Pages"),
+		Name("Kids"):  kids,
+		Name("Count"): Integer(len(pw.pages)),
+	})
+}
+
+func (pw *Writer) writeInfoDict() (ObjectRef, error) {
+	infoDict := pw.info.ToDict()
+	if len(infoDict) == 0 {
+		return ObjectRef{}, nil
+	}
+	ref := pw.AllocObject()
+	return ref, pw.WriteObject(ref, infoDict)
+}
+
+func (pw *Writer) writeCatalog() error {
 	catalogDict := Dict{
 		Name("Type"):  Name("Catalog"),
 		Name("Pages"): pw.pageTree,
@@ -441,17 +458,15 @@ func (pw *Writer) Close() error {
 	for k, v := range pw.catalogExtra {
 		catalogDict[k] = v
 	}
-	if err := pw.WriteObject(pw.catalog, catalogDict); err != nil {
-		return err
-	}
+	return pw.WriteObject(pw.catalog, catalogDict)
+}
 
-	// 4. Write the cross-reference table.
+func (pw *Writer) writeTrailer(infoRef ObjectRef) error {
 	xrefOffset := pw.w.count
 	if _, err := pw.xref.WriteTo(pw.w); err != nil {
 		return err
 	}
 
-	// 5. Write the trailer, merging any extra entries.
 	trailerDict := Dict{
 		Name("Size"): Integer(pw.xref.Size()),
 		Name("Root"): pw.catalog,
@@ -469,17 +484,12 @@ func (pw *Writer) Close() error {
 	if _, err := trailerDict.WriteTo(pw.w); err != nil {
 		return err
 	}
-
-	// 6. Write startxref.
 	if _, err := fmt.Fprintf(pw.w, "\nstartxref\n%d\n", xrefOffset); err != nil {
 		return err
 	}
-
-	// 7. Write %%EOF.
 	if _, err := io.WriteString(pw.w, "%%EOF\n"); err != nil {
 		return err
 	}
-
 	return nil
 }
 

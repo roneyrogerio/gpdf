@@ -137,59 +137,82 @@ func (p *parser) parseLiteralString() (LiteralString, error) {
 			}
 			p.pos++
 		case '\\':
-			p.pos++
-			if p.pos >= len(p.data) {
-				return "", fmt.Errorf("pdf: unexpected end in string escape")
+			escaped, skip, err := p.parseStringEscape()
+			if err != nil {
+				return "", err
 			}
-			esc := p.data[p.pos]
-			switch esc {
-			case 'n':
-				b = append(b, '\n')
-			case 'r':
-				b = append(b, '\r')
-			case 't':
-				b = append(b, '\t')
-			case 'b':
-				b = append(b, '\b')
-			case 'f':
-				b = append(b, '\f')
-			case '(', ')', '\\':
-				b = append(b, esc)
-			case '\r':
-				// Line continuation: skip \r and optional \n.
-				p.pos++
-				if p.pos < len(p.data) && p.data[p.pos] == '\n' {
-					p.pos++
-				}
+			if skip {
 				continue
-			case '\n':
-				// Line continuation: skip \n.
-				p.pos++
-				continue
-			default:
-				// Octal escape.
-				if esc >= '0' && esc <= '7' {
-					oct := int(esc - '0')
-					for i := 0; i < 2 && p.pos+1 < len(p.data); i++ {
-						next := p.data[p.pos+1]
-						if next < '0' || next > '7' {
-							break
-						}
-						p.pos++
-						oct = oct*8 + int(next-'0')
-					}
-					b = append(b, byte(oct))
-				} else {
-					b = append(b, esc)
-				}
 			}
-			p.pos++
+			b = append(b, escaped)
 		default:
 			b = append(b, ch)
 			p.pos++
 		}
 	}
 	return LiteralString(b), nil
+}
+
+// parseStringEscape handles a backslash escape sequence in a literal string.
+// It returns the decoded byte, whether to skip appending (line continuation), and any error.
+func (p *parser) parseStringEscape() (byte, bool, error) {
+	p.pos++ // skip backslash
+	if p.pos >= len(p.data) {
+		return 0, false, fmt.Errorf("pdf: unexpected end in string escape")
+	}
+	esc := p.data[p.pos]
+	switch esc {
+	case 'n':
+		p.pos++
+		return '\n', false, nil
+	case 'r':
+		p.pos++
+		return '\r', false, nil
+	case 't':
+		p.pos++
+		return '\t', false, nil
+	case 'b':
+		p.pos++
+		return '\b', false, nil
+	case 'f':
+		p.pos++
+		return '\f', false, nil
+	case '(', ')', '\\':
+		p.pos++
+		return esc, false, nil
+	case '\r':
+		// Line continuation: skip \r and optional \n.
+		p.pos++
+		if p.pos < len(p.data) && p.data[p.pos] == '\n' {
+			p.pos++
+		}
+		return 0, true, nil
+	case '\n':
+		// Line continuation: skip \n.
+		p.pos++
+		return 0, true, nil
+	default:
+		return p.parseOctalOrLiteral(esc)
+	}
+}
+
+// parseOctalOrLiteral parses an octal escape or returns the byte as-is.
+func (p *parser) parseOctalOrLiteral(esc byte) (byte, bool, error) {
+	if esc >= '0' && esc <= '7' {
+		oct := int(esc - '0')
+		for i := 0; i < 2 && p.pos+1 < len(p.data); i++ {
+			next := p.data[p.pos+1]
+			if next < '0' || next > '7' {
+				break
+			}
+			p.pos++
+			oct = oct*8 + int(next-'0')
+		}
+		p.pos++
+		return byte(oct), false, nil
+	}
+	p.pos++
+	return esc, false, nil
 }
 
 // parseHexString parses a PDF hex string enclosed in angle brackets.

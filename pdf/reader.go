@@ -353,35 +353,51 @@ func (r *Reader) parseXRefStream(p *parser) (Dict, error) {
 		return nil, fmt.Errorf("decode xref stream: %w", err)
 	}
 
-	// Get /W array (field widths).
-	wObj, ok := stream.Dict[Name("W")]
-	if !ok {
-		return nil, fmt.Errorf("xref stream missing /W")
-	}
-	wArr, ok := wObj.(Array)
-	if !ok || len(wArr) != 3 {
-		return nil, fmt.Errorf("xref stream /W must be array of 3")
-	}
-	w := [3]int{}
-	for i, a := range wArr {
-		if v, ok := a.(Integer); ok {
-			w[i] = int(v)
-		}
+	w, err := parseXRefFieldWidths(stream.Dict)
+	if err != nil {
+		return nil, err
 	}
 	entrySize := w[0] + w[1] + w[2]
 	if entrySize == 0 {
 		return stream.Dict, nil
 	}
 
-	// Get /Index array (default: [0 Size]).
-	sizeObj, _ := stream.Dict[Name("Size")]
+	indices := parseXRefIndices(stream.Dict)
+	r.parseXRefEntries(content, indices, w, entrySize)
+
+	return stream.Dict, nil
+}
+
+// parseXRefFieldWidths extracts and validates the /W array from an xref stream dict.
+func parseXRefFieldWidths(d Dict) ([3]int, error) {
+	wObj, ok := d[Name("W")]
+	if !ok {
+		return [3]int{}, fmt.Errorf("xref stream missing /W")
+	}
+	wArr, ok := wObj.(Array)
+	if !ok || len(wArr) != 3 {
+		return [3]int{}, fmt.Errorf("xref stream /W must be array of 3")
+	}
+	var w [3]int
+	for i, a := range wArr {
+		if v, ok := a.(Integer); ok {
+			w[i] = int(v)
+		}
+	}
+	return w, nil
+}
+
+// parseXRefIndices extracts the /Index array from an xref stream dict.
+// Returns [0, Size] as default if /Index is absent.
+func parseXRefIndices(d Dict) []int {
+	sizeObj, _ := d[Name("Size")]
 	size := 0
 	if v, ok := sizeObj.(Integer); ok {
 		size = int(v)
 	}
 
 	indices := []int{0, size}
-	if idxObj, ok := stream.Dict[Name("Index")]; ok {
+	if idxObj, ok := d[Name("Index")]; ok {
 		if idxArr, ok := idxObj.(Array); ok {
 			indices = make([]int, len(idxArr))
 			for i, a := range idxArr {
@@ -391,8 +407,11 @@ func (r *Reader) parseXRefStream(p *parser) (Dict, error) {
 			}
 		}
 	}
+	return indices
+}
 
-	// Parse entries.
+// parseXRefEntries reads xref entries from stream content and populates the xref table.
+func (r *Reader) parseXRefEntries(content []byte, indices []int, w [3]int, entrySize int) {
 	pos := 0
 	for i := 0; i < len(indices)-1; i += 2 {
 		startObj := indices[i]
@@ -401,33 +420,33 @@ func (r *Reader) parseXRefStream(p *parser) (Dict, error) {
 			if pos+entrySize > len(content) {
 				break
 			}
-			fields := [3]int64{}
-			offset := pos
-			for f := 0; f < 3; f++ {
-				for k := 0; k < w[f]; k++ {
-					fields[f] = fields[f]<<8 | int64(content[offset])
-					offset++
-				}
-				// Default for type field when w[0]=0: type=1.
-				if f == 0 && w[0] == 0 {
-					fields[0] = 1
-				}
-			}
+			fields := readXRefFields(content[pos:pos+entrySize], w)
 			pos += entrySize
 
 			objNum := startObj + j
-			typ := fields[0]
-			if typ == 1 {
-				// Regular object: field1=offset, field2=generation.
+			if fields[0] == 1 {
 				if _, exists := r.xref[objNum]; !exists {
 					r.xref[objNum] = fields[1]
 				}
 			}
-			// Type 0 (free) and type 2 (compressed in object stream) are skipped for now.
 		}
 	}
+}
 
-	return stream.Dict, nil
+// readXRefFields reads the three fields from a single xref stream entry.
+func readXRefFields(data []byte, w [3]int) [3]int64 {
+	var fields [3]int64
+	offset := 0
+	for f := 0; f < 3; f++ {
+		for k := 0; k < w[f]; k++ {
+			fields[f] = fields[f]<<8 | int64(data[offset])
+			offset++
+		}
+		if f == 0 && w[0] == 0 {
+			fields[0] = 1
+		}
+	}
+	return fields
 }
 
 // parseIndirectObjectAt parses "N G obj ... endobj" at the given offset.

@@ -130,20 +130,9 @@ func (m *Modifier) Write(w io.Writer) error {
 	}
 
 	// 2. Write new/modified objects.
-	xref := NewXRefTable()
-	for objNum, obj := range m.newObjects {
-		offset := cw.count
-		xref.Add(objNum, offset, 0)
-
-		if _, err := fmt.Fprintf(cw, "%d 0 obj\n", objNum); err != nil {
-			return err
-		}
-		if _, err := obj.WriteTo(cw); err != nil {
-			return err
-		}
-		if _, err := io.WriteString(cw, "\nendobj\n"); err != nil {
-			return err
-		}
+	xref, err := m.writeNewObjects(cw)
+	if err != nil {
+		return err
 	}
 
 	// 3. Write new xref table (only modified entries).
@@ -153,12 +142,34 @@ func (m *Modifier) Write(w io.Writer) error {
 	}
 
 	// 4. Write trailer.
+	return m.writeIncrementalTrailer(cw, xrefOffset)
+}
+
+func (m *Modifier) writeNewObjects(cw *countWriter) (*XRefTable, error) {
+	xref := NewXRefTable()
+	for objNum, obj := range m.newObjects {
+		offset := cw.count
+		xref.Add(objNum, offset, 0)
+
+		if _, err := fmt.Fprintf(cw, "%d 0 obj\n", objNum); err != nil {
+			return nil, err
+		}
+		if _, err := obj.WriteTo(cw); err != nil {
+			return nil, err
+		}
+		if _, err := io.WriteString(cw, "\nendobj\n"); err != nil {
+			return nil, err
+		}
+	}
+	return xref, nil
+}
+
+func (m *Modifier) writeIncrementalTrailer(cw *countWriter, xrefOffset int64) error {
 	prevXRef, err := m.reader.findStartXRef()
 	if err != nil {
 		return err
 	}
 
-	// Determine /Size (must be >= max obj num + 1).
 	size := m.nextObjNum
 	if origSize, ok := m.reader.trailer[Name("Size")]; ok {
 		if v, ok := origSize.(Integer); ok && int(v) > size {
@@ -171,7 +182,6 @@ func (m *Modifier) Write(w io.Writer) error {
 		Name("Root"): m.reader.RootRef(),
 		Name("Prev"): Integer(prevXRef),
 	}
-	// Preserve /Info if present.
 	if info, ok := m.reader.trailer[Name("Info")]; ok {
 		trailerDict[Name("Info")] = info
 	}
@@ -185,7 +195,6 @@ func (m *Modifier) Write(w io.Writer) error {
 	if _, err := fmt.Fprintf(cw, "\nstartxref\n%d\n%%%%EOF\n", xrefOffset); err != nil {
 		return err
 	}
-
 	return nil
 }
 
