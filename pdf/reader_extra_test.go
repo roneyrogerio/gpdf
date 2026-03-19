@@ -462,11 +462,11 @@ func TestBuildXRefStreamPDF(t *testing.T) {
 		streamContent.WriteByte(byte(offset & 0xFF))
 		streamContent.WriteByte(gen)
 	}
-	writeXRefEntry(0, 0, 0)                    // obj 0: free
-	writeXRefEntry(1, obj1Offset, 0)           // obj 1
-	writeXRefEntry(1, obj2Offset, 0)           // obj 2
-	writeXRefEntry(1, obj3Offset, 0)           // obj 3
-	writeXRefEntry(1, xrefStreamOffset, 0)     // obj 4 (xref stream itself)
+	writeXRefEntry(0, 0, 0)                // obj 0: free
+	writeXRefEntry(1, obj1Offset, 0)       // obj 1
+	writeXRefEntry(1, obj2Offset, 0)       // obj 2
+	writeXRefEntry(1, obj3Offset, 0)       // obj 3
+	writeXRefEntry(1, xrefStreamOffset, 0) // obj 4 (xref stream itself)
 
 	// Compress the stream content.
 	var compressedContent bytes.Buffer

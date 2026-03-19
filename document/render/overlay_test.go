@@ -753,7 +753,7 @@ func newTestModifier(t *testing.T) *pdf.Modifier {
 	w := pdf.NewWriter(&buf)
 	w.SetInfo(pdf.DocumentInfo{Title: "test"})
 	page := pdf.PageObject{
-		MediaBox: pdf.Rectangle{LLX: 0, LLY: 0, URX: 595, URY: 842},
+		MediaBox:  pdf.Rectangle{LLX: 0, LLY: 0, URX: 595, URY: 842},
 		Resources: pdf.ResourceDict{},
 		Contents:  nil,
 	}
