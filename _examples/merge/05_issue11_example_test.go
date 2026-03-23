@@ -32,7 +32,7 @@ func TestExample_Merge_05_Issue11(t *testing.T) {
 	})
 	page.AutoRow(func(r *template.RowBuilder) {
 		r.Col(12, func(c *template.ColBuilder) {
-			c.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. "+
+			c.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
 				"Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
 			)
 		})
