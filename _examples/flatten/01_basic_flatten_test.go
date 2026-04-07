@@ -120,7 +120,7 @@ func buildFormPDF(t *testing.T) []byte {
 }
 
 func TestExample_Flatten_01_BasicFlatten(t *testing.T) {
-	source, err := os.ReadFile("testdata/01_basic_flatten_before.pdf")
+	source, err := os.ReadFile(testdataDir + "/01_basic_flatten_before.pdf")
 	if err != nil {
 		t.Fatalf("read testdata: %v", err)
 	}

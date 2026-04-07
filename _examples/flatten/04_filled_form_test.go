@@ -3,7 +3,6 @@ package flatten_test
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"testing"
 
 	gpdf "github.com/gpdf-dev/gpdf"
@@ -27,12 +26,12 @@ func escapePDFString(s string) string {
 
 // formField describes a form field to add to the test PDF.
 type formField struct {
-	Name    string
-	Type    string  // "Tx", "Btn"
-	Value   string  // text value or "Yes"/"Off" for checkboxes
-	X, Y    float64
-	W, H    float64
-	LabelX  float64
+	Name   string
+	Type   string // "Tx", "Btn"
+	Value  string // text value or "Yes"/"Off" for checkboxes
+	X, Y   float64
+	W, H   float64
+	LabelX float64
 }
 
 // buildFilledFormPDF creates a PDF with multiple filled form fields.
@@ -188,10 +187,7 @@ func buildFilledFormPDF(t *testing.T) []byte {
 }
 
 func TestExample_Flatten_04_FilledForm(t *testing.T) {
-	source, err := os.ReadFile("testdata/04_filled_form_before.pdf")
-	if err != nil {
-		t.Fatalf("read testdata: %v", err)
-	}
+	source := buildFilledFormPDF(t)
 
 	doc, err := gpdf.Open(source)
 	if err != nil {
