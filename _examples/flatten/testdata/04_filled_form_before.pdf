@@ -1,0 +1,281 @@
+%PDF-1.7
+3 0 obj
+<< /Length 615 >>
+stream
+BT /F1 16 Tf 50 770 Td (Form Flatten Test - Filled Fields) Tj ET
+BT /F1 10 Tf 50.0 704.0 Td (Given Name:) Tj ET
+BT /F1 10 Tf 50.0 669.0 Td (Family Name:) Tj ET
+BT /F1 10 Tf 50.0 634.0 Td (Address:) Tj ET
+BT /F1 10 Tf 50.0 599.0 Td (Postcode:) Tj ET
+BT /F1 10 Tf 330.0 599.0 Td (City:) Tj ET
+BT /F1 10 Tf 50.0 564.0 Td (Country:) Tj ET
+BT /F1 10 Tf 50.0 529.0 Td (Height:) Tj ET
+BT /F1 10 Tf 50.0 494.0 Td (Shoe Size:) Tj ET
+BT /F1 10 Tf 50.0 454.0 Td (Driving License) Tj ET
+BT /F1 10 Tf 50.0 424.0 Td (Language 1) Tj ET
+BT /F1 10 Tf 230.0 424.0 Td (Language 2) Tj ET
+BT /F1 10 Tf 330.0 424.0 Td (Language 3) Tj ET
+
+endstream
+endobj
+5 0 obj
+<< /BBox [0 0 200 20] /Length 95 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 200.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (Taro) Tj ET
+Q
+EMC
+endstream
+endobj
+4 0 obj
+<< /AP << /N 5 0 R >> /FT /Tx /Rect [200 700 400 720] /Subtype /Widget /T (Given Name) /Type /Annot /V (Taro) >>
+endobj
+7 0 obj
+<< /BBox [0 0 200 20] /Length 97 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 200.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (Yamada) Tj ET
+Q
+EMC
+endstream
+endobj
+6 0 obj
+<< /AP << /N 7 0 R >> /FT /Tx /Rect [200 665 400 685] /Subtype /Widget /T (Family Name) /Type /Annot /V (Yamada) >>
+endobj
+9 0 obj
+<< /BBox [0 0 300 20] /Length 116 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 300.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (1-2-3 Shibuya, Shibuya-ku) Tj ET
+Q
+EMC
+endstream
+endobj
+8 0 obj
+<< /AP << /N 9 0 R >> /FT /Tx /Rect [200 630 500 650] /Subtype /Widget /T (Address) /Type /Annot /V (1-2-3 Shibuya, Shibuya-ku) >>
+endobj
+11 0 obj
+<< /BBox [0 0 120 20] /Length 99 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 120.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (150-0002) Tj ET
+Q
+EMC
+endstream
+endobj
+10 0 obj
+<< /AP << /N 11 0 R >> /FT /Tx /Rect [200 595 320 615] /Subtype /Widget /T (Postcode) /Type /Annot /V (150-0002) >>
+endobj
+13 0 obj
+<< /BBox [0 0 120 20] /Length 96 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 120.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (Tokyo) Tj ET
+Q
+EMC
+endstream
+endobj
+12 0 obj
+<< /AP << /N 13 0 R >> /FT /Tx /Rect [380 595 500 615] /Subtype /Widget /T (City) /Type /Annot /V (Tokyo) >>
+endobj
+15 0 obj
+<< /BBox [0 0 200 20] /Length 96 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 200.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (Japan) Tj ET
+Q
+EMC
+endstream
+endobj
+14 0 obj
+<< /AP << /N 15 0 R >> /FT /Tx /Rect [200 560 400 580] /Subtype /Widget /T (Country) /Type /Annot /V (Japan) >>
+endobj
+17 0 obj
+<< /BBox [0 0 100 20] /Length 94 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 100.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (170) Tj ET
+Q
+EMC
+endstream
+endobj
+16 0 obj
+<< /AP << /N 17 0 R >> /FT /Tx /Rect [200 525 300 545] /Subtype /Widget /T (Height) /Type /Annot /V (170) >>
+endobj
+19 0 obj
+<< /BBox [0 0 100 20] /Length 93 /Subtype /Form /Type /XObject >>
+stream
+/Tx BMC
+q
+0.95 0.95 0.95 rg
+0 0 100.0 20.0 re f
+0 0 0 rg
+BT /F1 10 Tf 2 5 Td (26) Tj ET
+Q
+EMC
+endstream
+endobj
+18 0 obj
+<< /AP << /N 19 0 R >> /FT /Tx /Rect [200 490 300 510] /Subtype /Widget /T (Shoe Size) /Type /Annot /V (26) >>
+endobj
+21 0 obj
+<< /BBox [0 0 14 14] /Length 62 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+2 2 m 12.0 12.0 l S
+12.0 2 m 2 12.0 l S
+Q
+endstream
+endobj
+22 0 obj
+<< /BBox [0 0 14 14] /Length 22 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+Q
+endstream
+endobj
+20 0 obj
+<< /AP << /N << /Off 22 0 R /Yes 21 0 R >> >> /AS /Yes /FT /Btn /Rect [200 450 214 464] /Subtype /Widget /T (Driving License) /Type /Annot /V /Yes >>
+endobj
+24 0 obj
+<< /BBox [0 0 14 14] /Length 62 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+2 2 m 12.0 12.0 l S
+12.0 2 m 2 12.0 l S
+Q
+endstream
+endobj
+25 0 obj
+<< /BBox [0 0 14 14] /Length 22 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+Q
+endstream
+endobj
+23 0 obj
+<< /AP << /N << /Off 25 0 R /Yes 24 0 R >> >> /AS /Yes /FT /Btn /Rect [200 420 214 434] /Subtype /Widget /T (Language 1) /Type /Annot /V /Yes >>
+endobj
+27 0 obj
+<< /BBox [0 0 14 14] /Length 62 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+2 2 m 12.0 12.0 l S
+12.0 2 m 2 12.0 l S
+Q
+endstream
+endobj
+28 0 obj
+<< /BBox [0 0 14 14] /Length 22 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+Q
+endstream
+endobj
+26 0 obj
+<< /AP << /N << /Off 28 0 R /Yes 27 0 R >> >> /AS /Off /FT /Btn /Rect [300 420 314 434] /Subtype /Widget /T (Language 2) /Type /Annot /V /Off >>
+endobj
+30 0 obj
+<< /BBox [0 0 14 14] /Length 62 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+2 2 m 12.0 12.0 l S
+12.0 2 m 2 12.0 l S
+Q
+endstream
+endobj
+31 0 obj
+<< /BBox [0 0 14 14] /Length 22 /Subtype /Form /Type /XObject >>
+stream
+q
+0 0 14.0 14.0 re S
+Q
+endstream
+endobj
+29 0 obj
+<< /AP << /N << /Off 31 0 R /Yes 30 0 R >> >> /AS /Yes /FT /Btn /Rect [400 420 414 434] /Subtype /Widget /T (Language 3) /Type /Annot /V /Yes >>
+endobj
+32 0 obj
+<< /Annots [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 23 0 R 26 0 R 29 0 R] /Contents 3 0 R /MediaBox [0 0 595 842] /Parent 2 0 R /Resources << >> /Type /Page >>
+endobj
+2 0 obj
+<< /Count 1 /Kids [32 0 R] /Type /Pages >>
+endobj
+1 0 obj
+<< /AcroForm << /Fields [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 23 0 R 26 0 R 29 0 R] >> /Pages 2 0 R /Type /Catalog >>
+endobj
+xref
+0 33
+0000000000 65535 f
+0000005332 00000 n
+0000005274 00000 n
+0000000009 00000 n
+0000000869 00000 n
+0000000675 00000 n
+0000001193 00000 n
+0000000997 00000 n
+0000001540 00000 n
+0000001324 00000 n
+0000001885 00000 n
+0000001686 00000 n
+0000002213 00000 n
+0000002017 00000 n
+0000002534 00000 n
+0000002338 00000 n
+0000002856 00000 n
+0000002662 00000 n
+0000003174 00000 n
+0000002981 00000 n
+0000003583 00000 n
+0000003301 00000 n
+0000003462 00000 n
+0000004031 00000 n
+0000003749 00000 n
+0000003910 00000 n
+0000004474 00000 n
+0000004192 00000 n
+0000004353 00000 n
+0000004917 00000 n
+0000004635 00000 n
+0000004796 00000 n
+0000005078 00000 n
+trailer
+<< /Root 1 0 R /Size 33 >>
+startxref
+5488
+%%EOF
