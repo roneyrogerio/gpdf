@@ -1801,6 +1801,70 @@ func TestLayoutImage_ClampToAvailableHeight(t *testing.T) {
 	}
 }
 
+func TestLayoutImage_MinDisplayHeightOverflowsInsteadOfClamping(t *testing.T) {
+	bl := NewBlockLayout()
+	img := &document.Image{
+		Source:           document.ImageSource{Width: 100, Height: 1000},
+		MinDisplayHeight: document.Pt(300),
+	}
+	constraints := Constraints{
+		AvailableWidth:  500,
+		AvailableHeight: 200,
+	}
+	result := bl.layoutImage(img, constraints)
+	if result.Overflow != img {
+		t.Fatalf("Overflow = %v; want original image node", result.Overflow)
+	}
+	if result.Bounds.Width != 0 || result.Bounds.Height != 0 {
+		t.Fatalf("Bounds = %+v; want zero bounds when image overflows", result.Bounds)
+	}
+}
+
+func TestLayoutImage_MinDisplayHeightAllowsClampAboveMinimum(t *testing.T) {
+	bl := NewBlockLayout()
+	img := &document.Image{
+		Source:           document.ImageSource{Width: 100, Height: 1000},
+		MinDisplayHeight: document.Pt(300),
+	}
+	constraints := Constraints{
+		AvailableWidth:  500,
+		AvailableHeight: 400,
+	}
+	result := bl.layoutImage(img, constraints)
+	if result.Overflow != nil {
+		t.Fatal("expected image to remain on the page when clamp stays above minimum height")
+	}
+	if !approxEqual(result.Bounds.Height, 400, 0.1) {
+		t.Errorf("Height = %v, want 400", result.Bounds.Height)
+	}
+	if !approxEqual(result.Bounds.Width, 40, 0.1) {
+		t.Errorf("Width = %v, want 40", result.Bounds.Width)
+	}
+}
+
+func TestLayoutImage_MinDisplayWidthDoesNotUpscaleOrRejectOriginalSize(t *testing.T) {
+	bl := NewBlockLayout()
+	img := &document.Image{
+		Source:          document.ImageSource{Width: 200, Height: 100},
+		DisplayWidth:    document.Pt(80),
+		MinDisplayWidth: document.Pt(100),
+	}
+	constraints := Constraints{
+		AvailableWidth:  500,
+		AvailableHeight: 700,
+	}
+	result := bl.layoutImage(img, constraints)
+	if result.Overflow != nil {
+		t.Fatal("expected original explicit size below minimum to keep the original behavior")
+	}
+	if !approxEqual(result.Bounds.Width, 80, 0.1) {
+		t.Errorf("Width = %v, want 80", result.Bounds.Width)
+	}
+	if !approxEqual(result.Bounds.Height, 40, 0.1) {
+		t.Errorf("Height = %v, want 40", result.Bounds.Height)
+	}
+}
+
 func TestLayoutImage_ZeroIntrinsic(t *testing.T) {
 	bl := NewBlockLayout()
 	img := &document.Image{
