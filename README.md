@@ -312,6 +312,11 @@ c.Image(imgData, template.FitWidth(document.Mm(80)))
 c.Image(imgData, template.FitHeight(document.Mm(30)))
 ```
 
+For low-level `document.Image` nodes, you can also set `MinDisplayWidth` and
+`MinDisplayHeight` to prevent layout from shrinking an image below a minimum
+size while fitting the available space. If the resized image would fall below
+either minimum, the image overflows instead of shrinking further.
+
 Images in grid columns:
 
 ```go

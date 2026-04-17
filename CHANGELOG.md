@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Minimum image display size constraints via `document.Image.MinDisplayWidth` and `document.Image.MinDisplayHeight`
+  - When resizing to fit available space would shrink an image below the configured minimum, the image overflows instead of shrinking further
+
 ## [1.0.4] - 2026-04-07
 
 ### Added
